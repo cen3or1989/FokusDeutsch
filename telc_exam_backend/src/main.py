@@ -43,9 +43,34 @@ CORS(
 # Database configuration
 database_url = os.getenv('DATABASE_URL')
 
-# Prefer project SQLite file if it already exists; otherwise fallback to /tmp for platforms like Render
-sqlite_selected = False
-if not database_url:
+# Determine database type and configure accordingly
+if database_url:
+    if database_url.startswith('postgresql://'):
+        # PostgreSQL configuration
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,
+            'pool_recycle': 300,
+            'pool_size': 10,
+            'max_overflow': 20
+        }
+        sqlite_selected = False
+    elif database_url.startswith('sqlite://'):
+        # SQLite configuration
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {'check_same_thread': False}
+        }
+        sqlite_selected = True
+    else:
+        # Unknown database type, treat as SQLite
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'connect_args': {'check_same_thread': False}
+        }
+        sqlite_selected = True
+else:
+    # No DATABASE_URL set, use local SQLite
     project_db_dir = os.path.join(os.path.dirname(__file__), 'database')
     project_db_path = os.path.join(project_db_dir, 'app.db')
 
@@ -62,18 +87,14 @@ if not database_url:
             os.makedirs(tmp_dir, exist_ok=True)
         sqlite_path = os.path.join(tmp_dir, 'app.db')
         database_url = f"sqlite:///{sqlite_path}"
-    sqlite_selected = True
-else:
-    sqlite_selected = database_url.startswith('sqlite')
-
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Ensure SQLite runs with the proper engine option
-if sqlite_selected:
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         'connect_args': {'check_same_thread': False}
     }
+    sqlite_selected = True
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 Migrate(app, db)
@@ -81,14 +102,6 @@ Migrate(app, db)
 # Auto-create database file/tables on startup if they don't exist
 with app.app_context():
     db.create_all()
-    
-    # Auto-migrate from SQLite to PostgreSQL if using PostgreSQL
-    if os.getenv('DATABASE_URL', '').startswith('postgresql'):
-        try:
-            from migrate_to_postgres import migrate_data
-            migrate_data()
-        except Exception as e:
-            print(f"Migration failed: {e}")
 
 # Register API blueprints
 app.register_blueprint(user_bp, url_prefix='/api')
@@ -145,6 +158,25 @@ def too_large(_):
 @app.errorhandler(429)
 def too_many(_):
     return json_error('too_many_requests', 429)
+
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint for deployment platforms"""
+    try:
+        # Test database connection
+        db.session.execute("SELECT 1")
+        return jsonify({
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
 
 @app.errorhandler(500)
 def internal_error(_):

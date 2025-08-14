@@ -5,7 +5,7 @@
   },
   "deploy": {
     "startCommand": "cd telc_exam_backend && python src/main.py",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
