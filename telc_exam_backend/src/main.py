@@ -42,28 +42,37 @@ CORS(
     supports_credentials=False,
 )
 
-# Database configuration - PostgreSQL only
+# Database configuration - PostgreSQL with SQLite fallback for development
 database_url = os.getenv('DATABASE_URL')
-if not database_url:
-    raise ValueError(
-        "DATABASE_URL environment variable is required. "
-        "Set it to your PostgreSQL connection string. "
-        "Example: postgresql://username:password@host:port/database"
-    )
 
-if not database_url.startswith('postgresql://'):
-    raise ValueError(
-        "DATABASE_URL must be a PostgreSQL connection string starting with 'postgresql://'. "
-        f"Current value: {database_url}"
-    )
+if database_url and database_url.startswith('postgresql://'):
+    # PostgreSQL configuration
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 10,
+        'max_overflow': 20
+    }
+    print("✅ Using PostgreSQL database")
+else:
+    # SQLite fallback for development
+    project_db_dir = os.path.join(os.path.dirname(__file__), 'database')
+    project_db_path = os.path.join(project_db_dir, 'app.db')
+    
+    if not os.path.exists(project_db_path):
+        # Create database directory if it doesn't exist
+        os.makedirs(project_db_dir, exist_ok=True)
+        print(f"📁 Created database directory: {project_db_dir}")
+    
+    database_url = f"sqlite:///{project_db_path}"
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'check_same_thread': False}
+    }
+    print(f"✅ Using SQLite database: {project_db_path}")
+    print("💡 To use PostgreSQL, set DATABASE_URL environment variable")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'pool_size': 10,
-    'max_overflow': 20
-}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
