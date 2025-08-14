@@ -122,3 +122,4 @@ def downgrade():
     op.drop_table('exam')
     op.drop_table('user')
     # ### end Alembic commands ###
+

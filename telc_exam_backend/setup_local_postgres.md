@@ -67,3 +67,4 @@ Once the database is set up:
 cd telc_exam_backend
 flask db upgrade
 ```
+
