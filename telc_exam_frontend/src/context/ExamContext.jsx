@@ -61,7 +61,8 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         },
         body: JSON.stringify({
           student_name: studentName,
-          answers: normalizedAnswers
+          answers: normalizedAnswers,
+          timer_phase: timer.phase
         })
       })
       
@@ -78,8 +79,18 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     }
   }, [studentName, examId, onComplete])
 
+  // Phase change handler
+  const handlePhaseChange = useCallback((newPhase) => {
+    console.log('Phase changed to:', newPhase)
+    if (newPhase === 'schriftlich') {
+      // Auto-navigate to Schriftlicher Ausdruck when phase changes
+      setCurrentSection('schriftlicher_ausdruck')
+      toast.info('Zeit für Teil 1-3 beendet. Schriftlicher Ausdruck beginnt jetzt.')
+    }
+  }, [])
+
   // Custom hooks
-  const timer = useExamTimer(5400, handleSubmitCallback)
+  const timer = useExamTimer(handlePhaseChange, handleSubmitCallback)
   const answersHook = useExamAnswers(exam || {}) // Pass empty object if exam is null
   const translation = useTranslation(examId)
   const audio = useAudio()
@@ -119,7 +130,40 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     }
   }
 
+  // Navigation restrictions based on timer phase
+  const canNavigateToSection = useCallback((section) => {
+    if (section === 'leseverstehen' || section === 'sprachbausteine') {
+      return timer.canAccessTeil1_3
+    }
+    if (section === 'hoerverstehen') {
+      return timer.canAccessHoeren
+    }
+    if (section === 'schriftlicher_ausdruck') {
+      return timer.canAccessSchriftlich
+    }
+    return false
+  }, [timer])
 
+  // Enhanced setCurrentSection with phase restrictions
+  const setCurrentSectionSafe = useCallback((section) => {
+    if (canNavigateToSection(section)) {
+      setCurrentSection(section)
+      
+      // Start Hörverstehen timer when entering that section
+      if (section === 'hoerverstehen' && timer.phase === 'teil1-3') {
+        timer.startHoerverstehen()
+        toast.info('Hörverstehen Timer gestartet: 20 Minuten')
+      }
+    } else {
+      if (timer.phase === 'schriftlich' && section !== 'schriftlicher_ausdruck') {
+        toast.error('Rückkehr zu Teil 1-3 ist nicht mehr möglich')
+      } else if (timer.hoerLocked && section === 'hoerverstehen') {
+        toast.error('Hörverstehen Zeit ist abgelaufen')
+      } else {
+        toast.error('Dieser Bereich ist derzeit nicht verfügbar')
+      }
+    }
+  }, [canNavigateToSection, timer])
 
   const value = {
     // Exam data
@@ -129,7 +173,8 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     
     // Navigation
     currentSection,
-    setCurrentSection,
+    setCurrentSection: setCurrentSectionSafe,
+    canNavigateToSection,
     leseTab,
     setLeseTab,
     sprachTab,

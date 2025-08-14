@@ -56,8 +56,8 @@ const ExamList = ({ onSelectExam }) => {
           </h1>
           
           <p className="text-lg leading-relaxed mb-8 max-w-2xl mx-auto" style={{color: 'var(--muted-foreground)'}}>
-            Wählen Sie eine Übungsprüfung aus der Liste unten. 
-            Jede Prüfung folgt dem offiziellen TELC B2 Format.
+            Wählen Sie eine Übungsprüfung aus der untenstehenden Liste. 
+            Jede Prüfung entspricht dem offiziellen TELC-B2-Format.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
@@ -65,8 +65,8 @@ const ExamList = ({ onSelectExam }) => {
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 mx-auto" style={{backgroundColor: 'var(--muted)'}}>
                 <Clock className="w-5 h-5" style={{color: 'var(--primary)'}} />
               </div>
-              <h3 className="font-semibold mb-2" style={{color: 'var(--foreground)'}}>140 Minuten</h3>
-              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>Originalprüfungsdauer</p>
+              <h3 className="font-semibold mb-2" style={{color: 'var(--foreground)'}}>120 Minuten</h3>
+              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>90 Min. (Lesen, Sprachbausteine, Hören) + 30 Min. (Schriftlicher Ausdruck)</p>
             </div>
             
             <div className="rounded-lg p-6 border" style={{backgroundColor: 'var(--card)', borderColor: 'var(--border)'}}>
@@ -74,15 +74,15 @@ const ExamList = ({ onSelectExam }) => {
                 <CheckCircle className="w-5 h-5" style={{color: 'var(--primary)'}} />
               </div>
               <h3 className="font-semibold mb-2" style={{color: 'var(--foreground)'}}>4 Teile</h3>
-              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>Komplett strukturiert</p>
+              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>Vollständig strukturiert</p>
             </div>
             
             <div className="rounded-lg p-6 border" style={{backgroundColor: 'var(--card)', borderColor: 'var(--border)'}}>
               <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 mx-auto" style={{backgroundColor: 'var(--muted)'}}>
                 <Zap className="w-5 h-5" style={{color: 'var(--primary)'}} />
               </div>
-              <h3 className="font-semibold mb-2" style={{color: 'var(--foreground)'}}>Sofortiges Feedback</h3>
-              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>Direkte Auswertung</p>
+              <h3 className="font-semibold mb-2" style={{color: 'var(--foreground)'}}>Unmittelbare Auswertung</h3>
+              <p className="text-sm" style={{color: 'var(--muted-foreground)'}}>Sofortiges Feedback</p>
             </div>
           </div>
         </div>
@@ -149,19 +149,19 @@ const ExamList = ({ onSelectExam }) => {
                   <StepCard 
                     number="2"
                     title="Timer startet"
-                    description="140 Minuten Zeit für alle Prüfungsteile"
+                    description="90 Min. für Lesen, Sprachbausteine und Hören (Hören: 20 Min.)"
                     icon={<Clock className="w-5 h-5" />}
                   />
                   <StepCard 
                     number="3"
                     title="Prüfung absolvieren"
-                    description="Bearbeiten Sie alle 4 Prüfungsteile"
+                    description="Bearbeiten Sie alle Teile gemäß den Zeitvorgaben"
                     icon={<CheckCircle className="w-5 h-5" />}
                   />
                   <StepCard 
                     number="4"
-                    title="Ergebnis erhalten"
-                    description="Sofortige Auswertung mit detailliertem Feedback"
+                    title="Ergebnisse erhalten"
+                    description="Unmittelbare Auswertung und detailliertes Feedback"
                     icon={<Star className="w-5 h-5" />}
                   />
                 </div>
@@ -186,7 +186,7 @@ const ExamList = ({ onSelectExam }) => {
                         </li>
                         <li className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{backgroundColor: 'var(--primary)'}}></div>
-                          Schriftlicher Ausdruck
+                          Schriftlicher Ausdruck (1 Aufgabe – A oder B)
                         </li>
                       </ul>
                     </div>
@@ -203,7 +203,7 @@ const ExamList = ({ onSelectExam }) => {
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4" style={{color: 'var(--primary)'}} />
-                          Realistische Prüfungssituation
+                          Realistische Prüfungssimulation
                         </li>
                         <li className="flex items-center gap-2">
                           <CheckCircle className="w-4 h-4" style={{color: 'var(--primary)'}} />
@@ -234,7 +234,7 @@ function ExamCard({ exam, index, onSelectExam }) {
             <div className="flex items-center gap-4 text-sm" style={{color: 'var(--muted-foreground)'}}>
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
-                <span>140 Min.</span>
+                <span>120 Min.</span>
               </div>
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
@@ -250,19 +250,19 @@ function ExamCard({ exam, index, onSelectExam }) {
         <div className="space-y-2 mb-6 rounded-lg p-4" style={{backgroundColor: 'var(--muted)'}}>
           <div className="flex items-center justify-between text-sm">
             <span style={{color: 'var(--muted-foreground)'}}>Leseverstehen</span>
-            <span className="font-medium" style={{color: 'var(--foreground)'}}>20 Aufgaben</span>
+            <span className="font-medium" style={{color: 'var(--foreground)'}}>3 Aufgaben</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span style={{color: 'var(--muted-foreground)'}}>Sprachbausteine</span>
-            <span className="font-medium" style={{color: 'var(--foreground)'}}>20 Aufgaben</span>
+            <span className="font-medium" style={{color: 'var(--foreground)'}}>2 Aufgaben</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span style={{color: 'var(--muted-foreground)'}}>Hörverstehen</span>
-            <span className="font-medium" style={{color: 'var(--foreground)'}}>20 Aufgaben</span>
+            <span className="font-medium" style={{color: 'var(--foreground)'}}>3 Aufgaben (20 Min. innerhalb der 90 Min.)</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span style={{color: 'var(--muted-foreground)'}}>Schriftlicher Ausdruck</span>
-            <span className="font-medium" style={{color: 'var(--foreground)'}}>2 Aufgaben</span>
+            <span className="font-medium" style={{color: 'var(--foreground)'}}>1 Aufgabe (A oder B) – 30 Min.</span>
           </div>
         </div>
 

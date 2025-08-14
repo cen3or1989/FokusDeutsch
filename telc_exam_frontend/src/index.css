@@ -480,6 +480,13 @@ h1,h2,h3,h4,h5 {
 }
 .tile-tab:hover { transform: translateY(-1px); box-shadow:0 6px 14px color-mix(in oklab, var(--text-color) 12%, transparent); }
 .tile-tab.active { outline: 2px solid color-mix(in oklab, var(--primary) 35%, transparent); box-shadow:0 8px 18px color-mix(in oklab, var(--text-color) 12%, transparent); }
+.tile-tab.locked { 
+  background: color-mix(in oklab, var(--card) 50%, var(--muted)); 
+  color: var(--muted-foreground); 
+  cursor: not-allowed; 
+  border-color: var(--muted); 
+}
+.tile-tab.locked:hover { transform: none; box-shadow: none; }
 
 /* Segmented control */
 .segmented {

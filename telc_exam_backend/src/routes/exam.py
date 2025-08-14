@@ -258,6 +258,32 @@ def submit_exam(exam_id):
     
     student_answers = data.get('answers', {})
     student_name = data.get('student_name', 'Unbekannt')
+    timer_phase = data.get('timer_phase', 'unknown')
+    
+    # Validation: Check timer phase restrictions
+    if timer_phase == 'teil1-3':
+        # During Teil 1-3 phase, Schriftlicher Ausdruck should not be submitted
+        if 'schriftlicher_ausdruck' in student_answers:
+            return jsonify({'error': 'Schriftlicher Ausdruck kann nur in der entsprechenden Phase eingereicht werden'}), 400
+    elif timer_phase == 'schriftlich':
+        # During Schriftlicher Ausdruck phase, only writing section should be submitted
+        restricted_sections = ['leseverstehen_teil1', 'leseverstehen_teil2', 'leseverstehen_teil3', 
+                              'sprachbausteine_teil1', 'sprachbausteine_teil2', 'hoerverstehen']
+        for section in restricted_sections:
+            if section in student_answers:
+                return jsonify({'error': 'Rückkehr zu Teil 1-3 ist nicht mehr möglich'}), 400
+    
+    # Validation: Schriftlicher Ausdruck choice restriction
+    if 'schriftlicher_ausdruck' in student_answers:
+        sa_data = student_answers['schriftlicher_ausdruck']
+        selected_task = sa_data.get('selected_task')
+        
+        if selected_task not in ['A', 'B']:
+            return jsonify({'error': 'Sie müssen genau eine Aufgabe (A oder B) für den Schriftlichen Ausdruck wählen'}), 400
+        
+        # Ensure only one task is selected
+        if not sa_data.get('text', '').strip():
+            return jsonify({'error': 'Text für Schriftlichen Ausdruck darf nicht leer sein'}), 400
     
     # Calculate total score
     total_score = 0
