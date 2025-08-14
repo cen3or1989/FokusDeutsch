@@ -41,13 +41,38 @@ CORS(
 )
 
 # Database configuration
-db_path = os.getenv('DATABASE_URL')
-if not db_path:
-    db_path = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
-app.config['SQLALCHEMY_DATABASE_URI'] = db_path
+database_url = os.getenv('DATABASE_URL')
+
+# Fallback to SQLite in /tmp for platforms like Render (ephemeral filesystem)
+sqlite_selected = False
+if not database_url:
+    tmp_dir = '/tmp'
+    try:
+        os.makedirs(tmp_dir, exist_ok=True)
+    except Exception:
+        # On environments where /tmp is not writable/available (e.g., Windows dev),
+        # fallback to local project directory to keep development smooth.
+        tmp_dir = os.path.join(os.path.dirname(__file__), 'database')
+        os.makedirs(tmp_dir, exist_ok=True)
+    sqlite_path = os.path.join(tmp_dir, 'app.db')
+    database_url = f"sqlite:///{sqlite_path}"
+    sqlite_selected = True
+else:
+    sqlite_selected = database_url.startswith('sqlite')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Ensure SQLite runs with the proper engine option
+if sqlite_selected:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {'check_same_thread': False}
+    }
+
 db.init_app(app)
 Migrate(app, db)
+
+# Auto-create database file/tables on startup if they don't exist
 with app.app_context():
     db.create_all()
 
