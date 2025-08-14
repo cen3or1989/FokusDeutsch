@@ -43,19 +43,25 @@ CORS(
 # Database configuration
 database_url = os.getenv('DATABASE_URL')
 
-# Fallback to SQLite in /tmp for platforms like Render (ephemeral filesystem)
+# Prefer project SQLite file if it already exists; otherwise fallback to /tmp for platforms like Render
 sqlite_selected = False
 if not database_url:
-    tmp_dir = '/tmp'
-    try:
-        os.makedirs(tmp_dir, exist_ok=True)
-    except Exception:
-        # On environments where /tmp is not writable/available (e.g., Windows dev),
-        # fallback to local project directory to keep development smooth.
-        tmp_dir = os.path.join(os.path.dirname(__file__), 'database')
-        os.makedirs(tmp_dir, exist_ok=True)
-    sqlite_path = os.path.join(tmp_dir, 'app.db')
-    database_url = f"sqlite:///{sqlite_path}"
+    project_db_dir = os.path.join(os.path.dirname(__file__), 'database')
+    project_db_path = os.path.join(project_db_dir, 'app.db')
+
+    if os.path.exists(project_db_path):
+        database_url = f"sqlite:///{project_db_path}"
+    else:
+        tmp_dir = '/tmp'
+        try:
+            os.makedirs(tmp_dir, exist_ok=True)
+        except Exception:
+            # On environments where /tmp is not writable/available (e.g., Windows dev),
+            # fallback to local project directory to keep development smooth.
+            tmp_dir = project_db_dir
+            os.makedirs(tmp_dir, exist_ok=True)
+        sqlite_path = os.path.join(tmp_dir, 'app.db')
+        database_url = f"sqlite:///{sqlite_path}"
     sqlite_selected = True
 else:
     sqlite_selected = database_url.startswith('sqlite')
