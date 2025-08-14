@@ -4,7 +4,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd telc_exam_backend && python src/main.py",
+    "startCommand": "cd telc_exam_backend && alembic upgrade head && python src/main.py",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",

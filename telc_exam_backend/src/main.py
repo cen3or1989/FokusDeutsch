@@ -42,60 +42,28 @@ CORS(
     supports_credentials=False,
 )
 
-# Database configuration
+# Database configuration - PostgreSQL only
 database_url = os.getenv('DATABASE_URL')
+if not database_url:
+    raise ValueError(
+        "DATABASE_URL environment variable is required. "
+        "Set it to your PostgreSQL connection string. "
+        "Example: postgresql://username:password@host:port/database"
+    )
 
-# Determine database type and configure accordingly
-if database_url:
-    if database_url.startswith('postgresql://'):
-        # PostgreSQL configuration
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'pool_pre_ping': True,
-            'pool_recycle': 300,
-            'pool_size': 10,
-            'max_overflow': 20
-        }
-        sqlite_selected = False
-    elif database_url.startswith('sqlite://'):
-        # SQLite configuration
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'connect_args': {'check_same_thread': False}
-        }
-        sqlite_selected = True
-    else:
-        # Unknown database type, treat as SQLite
-        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            'connect_args': {'check_same_thread': False}
-        }
-        sqlite_selected = True
-else:
-    # No DATABASE_URL set, use local SQLite
-    project_db_dir = os.path.join(os.path.dirname(__file__), 'database')
-    project_db_path = os.path.join(project_db_dir, 'app.db')
+if not database_url.startswith('postgresql://'):
+    raise ValueError(
+        "DATABASE_URL must be a PostgreSQL connection string starting with 'postgresql://'. "
+        f"Current value: {database_url}"
+    )
 
-    if os.path.exists(project_db_path):
-        database_url = f"sqlite:///{project_db_path}"
-    else:
-        tmp_dir = '/tmp'
-        try:
-            os.makedirs(tmp_dir, exist_ok=True)
-        except Exception:
-            # On environments where /tmp is not writable/available (e.g., Windows dev),
-            # fallback to local project directory to keep development smooth.
-            tmp_dir = project_db_dir
-            os.makedirs(tmp_dir, exist_ok=True)
-        sqlite_path = os.path.join(tmp_dir, 'app.db')
-        database_url = f"sqlite:///{sqlite_path}"
-    
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'connect_args': {'check_same_thread': False}
-    }
-    sqlite_selected = True
-
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 10,
+    'max_overflow': 20
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
