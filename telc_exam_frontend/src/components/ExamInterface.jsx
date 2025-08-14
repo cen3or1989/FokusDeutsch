@@ -13,6 +13,7 @@ import LesesverstehenSection from './exam/sections/LesesverstehenSection'
 import SprachbausteineSection from './exam/sections/SprachbausteineSection'
 import HoerverstehenSection from './exam/sections/HoerverstehenSection'
 import SchriftlicherAusdruckSection from './exam/sections/SchriftlicherAusdruckSection'
+import DebugPanel from './DebugPanel'
 
 // Loading component
 const ExamLoading = () => (
@@ -156,10 +157,13 @@ const ExamInterfaceContent = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Quick Answer Map */}
-      <QuickAnswerMap />
-    </div>
-  )
+          {/* Quick Answer Map */}
+    <QuickAnswerMap />
+    
+    {/* Debug Panel - Remove in production */}
+    {import.meta.env.DEV && <DebugPanel />}
+  </div>
+)
 }
 
 // Main wrapper component

@@ -54,6 +54,13 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     try {
       const normalizedAnswers = answersHook.normalizeAnswersForSubmit()
       
+      console.log('Submitting exam:', {
+        examId,
+        studentName,
+        answers: normalizedAnswers,
+        apiUrl: `${API_BASE_URL}/api/exams/${examId}/submit`
+      })
+      
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}/submit`, {
         method: 'POST',
         headers: {
@@ -65,18 +72,40 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         })
       })
       
+      const responseText = await response.text()
+      console.log('Submit response:', response.status, responseText)
+      
       if (response.ok) {
-        const result = await response.json()
-        setIsSubmitted(true)
-        onComplete(result)
+        try {
+          const result = JSON.parse(responseText)
+          setIsSubmitted(true)
+          onComplete(result)
+        } catch (e) {
+          console.error('Failed to parse response:', e)
+          toast.error('Fehler beim Verarbeiten der Antwort')
+        }
       } else {
-        toast.error('Fehler beim Einreichen der Prüfung')
+        // Try to parse error message
+        let errorMessage = 'Fehler beim Einreichen der Prüfung'
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.error || errorData.message || errorMessage
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = `Fehler ${response.status}: ${response.statusText || 'Unbekannter Fehler'}`
+        }
+        console.error('Submit failed:', response.status, responseText)
+        toast.error(errorMessage)
       }
     } catch (error) {
       console.error('Submit error:', error)
-      toast.error('Fehler beim Einreichen der Prüfung')
+      if (error.message === 'Failed to fetch') {
+        toast.error('Keine Verbindung zum Server. Bitte stellen Sie sicher, dass der Backend-Server läuft.')
+      } else {
+        toast.error(`Fehler beim Einreichen: ${error.message}`)
+      }
     }
-  }, [studentName, examId, onComplete])
+  }, [studentName, examId, onComplete, answersHook])
 
   // Custom hooks
   const timer = useExamTimer(5400, handleSubmitCallback)
