@@ -81,6 +81,14 @@ Migrate(app, db)
 # Auto-create database file/tables on startup if they don't exist
 with app.app_context():
     db.create_all()
+    
+    # Auto-migrate from SQLite to PostgreSQL if using PostgreSQL
+    if os.getenv('DATABASE_URL', '').startswith('postgresql'):
+        try:
+            from migrate_to_postgres import migrate_data
+            migrate_data()
+        except Exception as e:
+            print(f"Migration failed: {e}")
 
 # Register API blueprints
 app.register_blueprint(user_bp, url_prefix='/api')
