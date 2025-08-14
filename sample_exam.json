@@ -1,0 +1,157 @@
+{
+  "title": "TELC B2 Übungsprüfung 1",
+  "leseverstehen_teil1": {
+    "titles": [
+      "Umweltfreundliche Technologie",
+      "Gesunde Ernährung im Alltag", 
+      "Moderne Kommunikation",
+      "Nachhaltiger Tourismus",
+      "Digitales Lernen",
+      "Stadtentwicklung",
+      "Internationale Küche",
+      "Sportliche Aktivitäten",
+      "Künstlerische Ausdrucksformen",
+      "Wissenschaftliche Entdeckungen"
+    ],
+    "texts": [
+      "Neue umweltfreundliche Technologien helfen dabei, den CO2-Ausstoß zu reduzieren und unsere Umwelt zu schützen.",
+      "Eine ausgewogene Ernährung mit viel Gemüse und Obst ist wichtig für die Gesundheit und das Wohlbefinden.",
+      "Moderne Kommunikationsmittel wie Smartphones und soziale Medien haben unser Leben stark verändert.",
+      "Nachhaltiger Tourismus berücksichtigt die Umwelt und die lokale Bevölkerung bei Reiseentscheidungen.",
+      "Digitale Lernplattformen ermöglichen es Menschen überall auf der Welt, neue Fähigkeiten zu erlernen."
+    ],
+    "answers": ["a", "b", "c", "d", "e"]
+  },
+  "leseverstehen_teil2": {
+    "texts": [
+      "Die Digitalisierung verändert unsere Arbeitswelt grundlegend. Viele traditionelle Berufe werden automatisiert, während neue Arbeitsplätze in der IT-Branche entstehen. Arbeitnehmer müssen sich kontinuierlich weiterbilden, um mit den technologischen Entwicklungen Schritt zu halten. Gleichzeitig ermöglicht die Digitalisierung flexiblere Arbeitsmodelle wie Homeoffice und hybride Arbeitsformen.",
+      "Der Klimawandel ist eine der größten Herausforderungen unserer Zeit. Extreme Wetterereignisse nehmen zu, und die Temperaturen steigen weltweit. Um diese Entwicklung zu stoppen, müssen wir unseren CO2-Ausstoß drastisch reduzieren. Erneuerbare Energien, nachhaltige Verkehrsmittel und bewusster Konsum sind wichtige Schritte in diese Richtung."
+    ],
+    "questions": [
+      {
+        "question": "Was ist laut dem ersten Text eine Folge der Digitalisierung?",
+        "options": ["Weniger Arbeitsplätze", "Neue IT-Jobs", "Höhere Löhne"],
+        "correct": 1
+      },
+      {
+        "question": "Was ermöglicht die Digitalisierung den Arbeitnehmern?",
+        "options": ["Kürzere Arbeitszeiten", "Flexible Arbeitsmodelle", "Höhere Gehälter"],
+        "correct": 1
+      },
+      {
+        "question": "Was ist laut dem zweiten Text notwendig gegen den Klimawandel?",
+        "options": ["Mehr Technologie", "CO2-Reduktion", "Neue Gesetze"],
+        "correct": 1
+      },
+      {
+        "question": "Welche Lösungen werden für den Klimaschutz vorgeschlagen?",
+        "options": ["Atomenergie", "Erneuerbare Energien", "Kohleenergie"],
+        "correct": 1
+      },
+      {
+        "question": "Was charakterisiert extreme Wetterereignisse?",
+        "options": ["Sie werden seltener", "Sie nehmen zu", "Sie bleiben gleich"],
+        "correct": 1
+      }
+    ],
+    "answers": [1, 1, 1, 1, 1]
+  },
+  "leseverstehen_teil3": {
+    "situations": [
+      "Sie suchen eine Wohnung zur Miete",
+      "Sie möchten einen Deutschkurs besuchen",
+      "Sie brauchen einen Termin beim Zahnarzt",
+      "Sie wollen ein Auto kaufen", 
+      "Sie suchen einen Job als Verkäufer",
+      "Sie möchten ein Restaurant besuchen",
+      "Sie brauchen Hilfe bei der Steuererklärung",
+      "Sie suchen einen Babysitter",
+      "Sie möchten Sport treiben",
+      "Sie wollen Möbel kaufen"
+    ],
+    "ads": [
+      "3-Zimmer-Wohnung in zentraler Lage zu vermieten. 850€ warm.",
+      "Deutschkurse für alle Niveaus. Abends und am Wochenende.",
+      "Zahnarztpraxis Dr. Müller - Termine auch am Samstag möglich.",
+      "Gebrauchtwagen in gutem Zustand. TÜV neu. 8.500€ VB.",
+      "Verkäufer/in für Elektronikfachgeschäft gesucht. Vollzeit.",
+      "Restaurant 'Zur Linde' - Traditionelle deutsche Küche.",
+      "Steuerberatung Meier - Kompetent und zuverlässig.",
+      "Erfahrene Babysitterin bietet ihre Dienste an.",
+      "Fitnessstudio Powerhouse - Probetraining kostenlos.",
+      "Möbelhaus Comfort - Große Auswahl, faire Preise.",
+      "Sprachschule International - Intensivkurse verfügbar.",
+      "Autowerkstatt Schmidt - Reparaturen aller Marken."
+    ],
+    "answers": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+  },
+  "sprachbausteine_teil1": {
+    "text": "Liebe Freunde,\n\nich möchte euch von (21) _____ Reise nach Italien erzählen. Es war wirklich (22) _____ wunderbare Erfahrung! Das Wetter war (23) _____ perfekt und die Menschen sehr (24) _____. Besonders (25) _____ hat mir die italienische Küche gefallen. Ich (26) _____ jeden Tag etwas Neues probiert. (27) _____ nächstes Jahr möchte ich wieder (28) _____ Italien fahren. Vielleicht (29) _____ ihr ja Lust, mitzukommen? Das (30) _____ toll!\n\nViele Grüße\nAnna",
+    "options": [
+      {"a": "meine", "b": "meiner", "c": "meinem"},
+      {"a": "ein", "b": "eine", "c": "einen"},
+      {"a": "ganz", "b": "ganzen", "c": "ganzer"},
+      {"a": "freundlich", "b": "freundliche", "c": "freundlicher"},
+      {"a": "gut", "b": "gern", "c": "gerne"},
+      {"a": "habe", "b": "bin", "c": "war"},
+      {"a": "Im", "b": "Am", "c": "Zum"},
+      {"a": "nach", "b": "zu", "c": "in"},
+      {"a": "habt", "b": "seid", "c": "werdet"},
+      {"a": "wäre", "b": "hätte", "c": "könnte"}
+    ],
+    "answers": ["b", "b", "a", "a", "a", "a", "a", "a", "a", "a"]
+  },
+  "sprachbausteine_teil2": {
+    "text": "Moderne Städte stehen vor großen (31) _____. Die Bevölkerung wächst schnell und die (32) _____ wird immer dichter. Gleichzeitig müssen die Städte (33) _____ werden, um die Umwelt zu schützen. Viele Städte (34) _____ deshalb in öffentliche Verkehrsmittel und (35) _____ Energie. Auch grüne (36) _____ und Parks sind wichtig für die Lebensqualität. Die (37) _____ sollen sich in ihrer Stadt (38) _____ fühlen. Nur so können Städte in der (39) _____ lebenswert bleiben. Dies erfordert eine gute (40) _____ zwischen Bürgern und Verwaltung.",
+    "words": [
+      "Herausforderungen", "Bebauung", "nachhaltiger", "investieren", "erneuerbare",
+      "Flächen", "Bewohner", "wohlfühlen", "Zukunft", "Zusammenarbeit",
+      "Probleme", "Entwicklung", "moderne", "planen", "Verkehr"
+    ],
+    "answers": ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+  },
+  "hoerverstehen": {
+    "teil1": {
+      "audio_url": "",
+      "statements": [
+        "Der Mann geht heute Abend ins Kino",
+        "Die Frau hat morgen einen wichtigen Termin",
+        "Das Wetter wird am Wochenende schön",
+        "Der Zug hat 10 Minuten Verspätung",
+        "Das Restaurant ist heute geschlossen"
+      ],
+      "answers": [true, false, true, false, true]
+    },
+    "teil2": {
+      "audio_url": "",
+      "statements": [
+        "Die Sprecher diskutieren über Umweltschutz",
+        "Einer der Sprecher ist Wissenschaftler",
+        "Sie sind sich in allen Punkten einig",
+        "Das Gespräch findet im Radio statt",
+        "Es geht um erneuerbare Energien",
+        "Die Frau ist gegen Windenergie",
+        "Der Mann arbeitet für eine Umweltorganisation",
+        "Sie sprechen über Kosten von Solaranlagen",
+        "Das Gespräch dauert etwa 15 Minuten",
+        "Am Ende einigen sie sich auf einen Kompromiss"
+      ],
+      "answers": [true, true, false, true, true, false, true, true, false, true]
+    },
+    "teil3": {
+      "audio_url": "",
+      "statements": [
+        "Die Veranstaltung findet nächste Woche statt",
+        "Anmeldungen sind bis Freitag möglich", 
+        "Die Teilnahme kostet 50 Euro",
+        "Es gibt noch freie Plätze",
+        "Der Kurs richtet sich an Anfänger"
+      ],
+      "answers": [false, true, false, true, true]
+    }
+  },
+  "schriftlicher_ausdruck": {
+    "task_a": "Sie haben in einer Zeitschrift einen Artikel über 'Umweltschutz im Alltag' gelesen. Im Online-Forum der Zeitschrift finden Sie folgende Meinung:\n\n'Umweltschutz ist wichtig, aber im Alltag oft schwer umsetzbar. Die meisten Maßnahmen sind zu teuer oder zu kompliziert.'\n\nSchreiben Sie nun Ihre Meinung (circa 80 Wörter).",
+    "task_b": "Sie haben vor einem Monat online einen Sprachkurs gebucht. Leider entspricht der Kurs nicht Ihren Erwartungen. Schreiben Sie eine Beschwerde an die Sprachschule. Vergessen Sie nicht:\n- Grund Ihres Schreibens\n- Was genau Sie stört\n- Was Sie von der Schule erwarten\n\nSchreiben Sie circa 80 Wörter. Vergessen Sie nicht Anrede und Gruß."
+  }
+}

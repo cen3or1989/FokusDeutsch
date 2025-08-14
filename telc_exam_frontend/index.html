@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>سازنده آزمون telc B2</title>
+    <script>
+      (function(){
+        function applyTheme(){
+          try{
+            var t = localStorage.getItem('theme');
+            var isDark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            document.documentElement.classList.toggle('dark', isDark);
+          }catch(e){}
+        }
+        applyTheme();
+        try{
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+            if(!('theme' in localStorage)) applyTheme();
+          });
+        }catch(e){}
+        window.__setTheme = function(mode){
+          if(mode==='light') localStorage.setItem('theme','light');
+          else if(mode==='dark') localStorage.setItem('theme','dark');
+          else localStorage.removeItem('theme');
+          applyTheme();
+        };
+      })();
+    </script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkfTOGFVtRqWI0S2dF2iVQ8N2Kq6YEF3D0C0Q5r9XW+EKa8z1j4+KVl6g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
