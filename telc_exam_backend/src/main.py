@@ -13,6 +13,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from typing import Tuple
+from datetime import datetime
+from sqlalchemy import text
 
 load_dotenv()
 
@@ -164,7 +166,7 @@ def health_check():
     """Health check endpoint for deployment platforms"""
     try:
         # Test database connection
-        db.session.execute("SELECT 1")
+        db.session.execute(text("SELECT 1"))
         return jsonify({
             "status": "healthy",
             "database": "connected",
@@ -183,19 +185,11 @@ def internal_error(_):
     return json_error('internal_server_error', 500)
 
 @app.route('/')
-def health_check():
+def index():
     return jsonify({
         "status": "healthy",
         "message": "telc B2 Exam System Backend API",
         "version": "1.0.0"
-    })
-
-@app.route('/api/health')
-def api_health():
-    return jsonify({
-        "status": "healthy",
-        "database": "connected",
-        "api": "ready"
     })
 
 if __name__ == '__main__':
