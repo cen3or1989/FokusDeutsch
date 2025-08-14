@@ -348,12 +348,46 @@ def submit_exam(exam_id):
         'max_score': max_score,
         'score_percentage': score_percentage,
         'detailed_scores': {
-            'leseverstehen_teil1': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv1_answers) if exam.lv1_answers else []) if i < len(student_answers.get('leseverstehen_teil1', [])) and student_answers['leseverstehen_teil1'][i] == correct)}/5",
-            'leseverstehen_teil2': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv2_answers) if exam.lv2_answers else []) if i < len(student_answers.get('leseverstehen_teil2', [])) and student_answers['leseverstehen_teil2'][i] == correct)}/5",
-            'leseverstehen_teil3': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv3_answers) if exam.lv3_answers else []) if i < len(student_answers.get('leseverstehen_teil3', [])) and student_answers['leseverstehen_teil3'][i] == correct)}/10",
-            'sprachbausteine_teil1': f"{sum(1 for i, correct in enumerate(json.loads(exam.sb1_answers) if exam.sb1_answers else []) if i < len(student_answers.get('sprachbausteine_teil1', [])) and student_answers['sprachbausteine_teil1'][i] == correct)}/10",
-            'sprachbausteine_teil2': f"{sum(1 for i, correct in enumerate(json.loads(exam.sb2_answers) if exam.sb2_answers else []) if i < len(student_answers.get('sprachbausteine_teil2', [])) and student_answers['sprachbausteine_teil2'][i] == correct)}/10",
-            'hoerverstehen': f"{sum(1 for teil in ['teil1', 'teil2', 'teil3'] for i, correct in enumerate(json.loads(getattr(exam, f'hv{teil[-1]}_answers')) if getattr(exam, f'hv{teil[-1]}_answers') else []) if i < len(student_answers.get('hoerverstehen', {}).get(teil, [])) and student_answers['hoerverstehen'][teil][i] == correct)}/20"
+            'leseverstehen_teil1': (lambda: (
+                f"{sum(1 for i, correct in enumerate(json.loads(exam.lv1_answers) if exam.lv1_answers else [])
+                      if i < len(student_answers.get('leseverstehen_teil1', []))
+                      and student_answers.get('leseverstehen_teil1', [])[i] == correct)}/5"
+            ))(),
+            'leseverstehen_teil2': (lambda: (
+                f"{sum(1 for i, correct in enumerate(json.loads(exam.lv2_answers) if exam.lv2_answers else [])
+                      if i < len(student_answers.get('leseverstehen_teil2', []))
+                      and student_answers.get('leseverstehen_teil2', [])[i] == correct)}/5"
+            ))(),
+            'leseverstehen_teil3': (lambda: (
+                f"{sum(1 for i, correct in enumerate(json.loads(exam.lv3_answers) if exam.lv3_answers else [])
+                      if i < len(student_answers.get('leseverstehen_teil3', []))
+                      and student_answers.get('leseverstehen_teil3', [])[i] == correct)}/10"
+            ))(),
+            'sprachbausteine_teil1': (lambda: (
+                f"{sum(1 for i, correct in enumerate(json.loads(exam.sb1_answers) if exam.sb1_answers else [])
+                      if i < len(student_answers.get('sprachbausteine_teil1', []))
+                      and student_answers.get('sprachbausteine_teil1', [])[i] == correct)}/10"
+            ))(),
+            'sprachbausteine_teil2': (lambda: (
+                f"{sum(1 for i, correct in enumerate(json.loads(exam.sb2_answers) if exam.sb2_answers else [])
+                      if i < len(student_answers.get('sprachbausteine_teil2', []))
+                      and student_answers.get('sprachbausteine_teil2', [])[i] == correct)}/10"
+            ))(),
+            'hoerverstehen': (lambda: (
+                (
+                    lambda hv_total: f"{hv_total}/20"
+                )(
+                    sum(
+                        1
+                        for teil in ['teil1', 'teil2', 'teil3']
+                        for i, correct in enumerate(
+                            json.loads(getattr(exam, f'hv{teil[-1]}_answers')) if getattr(exam, f'hv{teil[-1]}_answers') else []
+                        )
+                        if i < len(student_answers.get('hoerverstehen', {}).get(teil, []))
+                        and student_answers.get('hoerverstehen', {}).get(teil, [])[i] == correct
+                    )
+                )
+            ))()
         }
     })
 
