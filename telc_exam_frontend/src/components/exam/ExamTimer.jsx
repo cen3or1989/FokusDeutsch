@@ -1,8 +1,9 @@
-import { Clock, AlertTriangle } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle } from 'lucide-react'
 import { useExam } from '@/context/ExamContext'
 
 const ExamTimer = ({ compact = false }) => {
-  const { timer } = useExam()
+  const { timer, answers } = useExam()
+  const teil1_3Progress = answers.getTeil1_3Progress()
 
   if (compact) {
     return (
@@ -69,6 +70,30 @@ const ExamTimer = ({ compact = false }) => {
       {timer.phase === 'schriftlich' && (
         <div className="text-xs" style={{ color: 'var(--muted-foreground)' }}>
           30 Minuten für Schriftlichen Ausdruck
+        </div>
+      )}
+      
+      {/* Show progress for unlocking Schriftlicher Ausdruck */}
+      {timer.phase === 'teil1-3' && (
+        <div className="text-xs flex items-center gap-2" style={{ color: 'var(--muted-foreground)' }}>
+          <div className="flex items-center gap-1">
+            {teil1_3Progress.hasMinimumForWriting ? (
+              <CheckCircle className="w-3 h-3" style={{ color: 'var(--success-color)' }} />
+            ) : (
+              <div className="w-3 h-3 rounded-full border" style={{ borderColor: 'var(--muted)' }}>
+                <div 
+                  className="h-full rounded-full transition-all"
+                  style={{ 
+                    width: `${Math.min(teil1_3Progress.percentage, 100)}%`,
+                    backgroundColor: teil1_3Progress.percentage >= 50 ? 'var(--success-color)' : 'var(--warning-color)'
+                  }}
+                />
+              </div>
+            )}
+            <span>
+              Schriftlich: {teil1_3Progress.answered}/{Math.ceil(teil1_3Progress.total * 0.5)} (50%)
+            </span>
+          </div>
         </div>
       )}
     </div>

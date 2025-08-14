@@ -69,6 +69,23 @@ export const useExamAnswers = (exam) => {
     }
   }, [answers])
 
+  // Calculate total progress for Teil 1-3 (Lesen + Sprachbausteine + Hören)
+  const getTeil1_3Progress = useCallback(() => {
+    const lv = getProgress('leseverstehen')
+    const sb = getProgress('sprachbausteine') 
+    const hv = getProgress('hoerverstehen')
+    
+    const totalAnswered = lv.answered + sb.answered + hv.answered
+    const totalQuestions = lv.total + sb.total + hv.total // Should be 60 (20+20+20)
+    
+    return {
+      answered: totalAnswered,
+      total: totalQuestions,
+      percentage: totalQuestions > 0 ? (totalAnswered / totalQuestions) * 100 : 0,
+      hasMinimumForWriting: totalAnswered >= (totalQuestions * 0.5) // 50% threshold
+    }
+  }, [getProgress])
+
   const getAnswerStatus = useCallback((questionNum) => {
     if (questionNum<=5) return !!answers.leseverstehen_teil1?.[questionNum-1]
     if (questionNum<=10) return !!answers.leseverstehen_teil2?.[questionNum-6]
@@ -102,6 +119,7 @@ export const useExamAnswers = (exam) => {
     showSaved,
     updateAnswer,
     getProgress,
+    getTeil1_3Progress,
     getAnswerStatus,
     normalizeAnswersForSubmit
   }

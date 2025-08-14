@@ -3,6 +3,9 @@ import { useExam } from '@/context/ExamContext'
 
 const ExamNavigation = () => {
   const { currentSection, setCurrentSection, answers, canNavigateToSection, timer } = useExam()
+  
+  // Get overall progress for Teil 1-3
+  const teil1_3Progress = answers.getTeil1_3Progress()
 
   const sections = [
     { key: 'leseverstehen', label: 'Leseverstehen', icon: BookOpen },
@@ -58,9 +61,25 @@ const ExamNavigation = () => {
                 )}
               </div>
             )}
-            {key === 'schriftlicher_ausdruck' && timer.phase === 'schriftlich' && (
-              <div className="text-xs mt-1" style={{ color: 'var(--warning-color)' }}>
-                {timer.formatTime}
+            {key === 'schriftlicher_ausdruck' && (
+              <div className="text-xs mt-1">
+                {timer.phase === 'schriftlich' ? (
+                  <span style={{ color: 'var(--warning-color)' }}>
+                    {timer.formatTime}
+                  </span>
+                ) : (
+                  <div>
+                    {teil1_3Progress.hasMinimumForWriting ? (
+                      <span style={{ color: 'var(--success-color)' }}>
+                        Verfügbar
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--muted-foreground)' }}>
+                        {teil1_3Progress.answered}/{Math.ceil(teil1_3Progress.total * 0.5)} (50%)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </button>

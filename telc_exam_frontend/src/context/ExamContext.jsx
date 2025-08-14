@@ -130,7 +130,7 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     }
   }
 
-  // Navigation restrictions based on timer phase
+  // Navigation restrictions based on timer phase and progress
   const canNavigateToSection = useCallback((section) => {
     if (section === 'leseverstehen' || section === 'sprachbausteine') {
       return timer.canAccessTeil1_3
@@ -139,10 +139,12 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       return timer.canAccessHoeren
     }
     if (section === 'schriftlicher_ausdruck') {
-      return timer.canAccessSchriftlich
+      // For Schriftlicher Ausdruck: need timer access + minimum 50% progress
+      const teil1_3Progress = answersHook.getTeil1_3Progress()
+      return timer.canAccessSchriftlich && teil1_3Progress.hasMinimumForWriting
     }
     return false
-  }, [timer])
+  }, [timer, answersHook])
 
   // Enhanced setCurrentSection with phase restrictions
   const setCurrentSectionSafe = useCallback((section) => {
@@ -159,6 +161,13 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         toast.error('Rückkehr zu Teil 1-3 ist nicht mehr möglich')
       } else if (timer.hoerLocked && section === 'hoerverstehen') {
         toast.error('Hörverstehen Zeit ist abgelaufen')
+      } else if (section === 'schriftlicher_ausdruck') {
+        const teil1_3Progress = answersHook.getTeil1_3Progress()
+        if (!timer.canAccessSchriftlich) {
+          toast.error('Schriftlicher Ausdruck ist noch nicht verfügbar')
+        } else if (!teil1_3Progress.hasMinimumForWriting) {
+          toast.error(`Sie müssen mindestens 50% der Aufgaben (${Math.ceil(teil1_3Progress.total * 0.5)}/${teil1_3Progress.total}) in Teil 1-3 beantworten`)
+        }
       } else {
         toast.error('Dieser Bereich ist derzeit nicht verfügbar')
       }

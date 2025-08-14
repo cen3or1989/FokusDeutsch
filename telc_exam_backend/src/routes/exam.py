@@ -284,6 +284,32 @@ def submit_exam(exam_id):
         # Ensure only one task is selected
         if not sa_data.get('text', '').strip():
             return jsonify({'error': 'Text für Schriftlichen Ausdruck darf nicht leer sein'}), 400
+        
+        # Check 50% completion requirement for Schriftlicher Ausdruck submission
+        if timer_phase == 'schriftlich':
+            total_teil1_3_answered = 0
+            total_teil1_3_questions = 60  # 20 + 20 + 20
+            
+            # Count answers from all Teil 1-3 sections
+            for section_key in ['leseverstehen_teil1', 'leseverstehen_teil2', 'leseverstehen_teil3', 
+                               'sprachbausteine_teil1', 'sprachbausteine_teil2']:
+                if section_key in student_answers:
+                    answers_list = student_answers[section_key]
+                    if isinstance(answers_list, list):
+                        total_teil1_3_answered += len([a for a in answers_list if a and str(a).strip()])
+            
+            # Count Hörverstehen answers
+            if 'hoerverstehen' in student_answers:
+                hv_data = student_answers['hoerverstehen']
+                for teil in ['teil1', 'teil2', 'teil3']:
+                    if teil in hv_data and isinstance(hv_data[teil], list):
+                        total_teil1_3_answered += len([a for a in hv_data[teil] if isinstance(a, bool)])
+            
+            required_answers = total_teil1_3_questions * 0.5  # 50%
+            if total_teil1_3_answered < required_answers:
+                return jsonify({
+                    'error': f'Sie müssen mindestens 50% der Aufgaben ({int(required_answers)}/{total_teil1_3_questions}) in Teil 1-3 beantworten, bevor Sie den Schriftlichen Ausdruck einreichen können'
+                }), 400
     
     # Calculate total score
     total_score = 0
