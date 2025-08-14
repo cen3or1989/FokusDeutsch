@@ -42,45 +42,42 @@ CORS(
     supports_credentials=False,
 )
 
-# Database configuration - PostgreSQL with SQLite fallback for development
+# Database configuration - PostgreSQL only
 database_url = os.getenv('DATABASE_URL')
 
-if database_url and database_url.startswith('postgresql://'):
-    # PostgreSQL configuration
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'pool_size': 10,
-        'max_overflow': 20
-    }
-    print("✅ Using PostgreSQL database")
-else:
-    # SQLite fallback for development
-    project_db_dir = os.path.join(os.path.dirname(__file__), 'database')
-    project_db_path = os.path.join(project_db_dir, 'app.db')
-    
-    if not os.path.exists(project_db_path):
-        # Create database directory if it doesn't exist
-        os.makedirs(project_db_dir, exist_ok=True)
-        print(f"📁 Created database directory: {project_db_dir}")
-    
-    database_url = f"sqlite:///{project_db_path}"
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'connect_args': {'check_same_thread': False}
-    }
-    print(f"✅ Using SQLite database: {project_db_path}")
-    print("💡 To use PostgreSQL, set DATABASE_URL environment variable")
+if not database_url:
+    raise ValueError(
+        "DATABASE_URL environment variable is required. "
+        "Set it to your PostgreSQL connection string. "
+        "Example: postgresql://username:password@host:port/database"
+    )
 
+if not database_url.startswith('postgresql://'):
+    raise ValueError(
+        "Only PostgreSQL databases are supported. "
+        "DATABASE_URL must start with 'postgresql://'. "
+        f"Got: {database_url[:20]}..."
+    )
+
+# PostgreSQL configuration with connection pooling
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 10,
+    'max_overflow': 20,
+    'pool_timeout': 30
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+print(f"✅ Connected to PostgreSQL database")
+print(f"🔗 Host: {database_url.split('@')[1].split('/')[0] if '@' in database_url else 'Unknown'}")
 
 db.init_app(app)
 Migrate(app, db)
 
-# Auto-create database file/tables on startup if they don't exist
-with app.app_context():
-    db.create_all()
+# Note: Tables are created via Alembic migrations, not db.create_all()
+# Run: flask db upgrade
 
 # Register API blueprints
 app.register_blueprint(user_bp, url_prefix='/api')

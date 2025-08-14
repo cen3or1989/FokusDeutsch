@@ -52,9 +52,10 @@ A comprehensive web application for TELC B2 exam preparation and administration,
 ### Backend
 - **Flask** web framework
 - **SQLAlchemy** ORM
-- **SQLite** database
+- **PostgreSQL** database
 - **Flask-CORS** for cross-origin requests
 - **Flask-Migrate** for database migrations
+- **Alembic** for schema management
 
 ### Key Features
 - **Translation API Integration**: Multiple translation services
@@ -71,9 +72,26 @@ A comprehensive web application for TELC B2 exam preparation and administration,
 - npm or pnpm
 
 ### Backend Setup
+
+1. **Install dependencies**:
 ```bash
 cd telc_exam_backend
 pip install -r requirements.txt
+```
+
+2. **Set up PostgreSQL database**:
+   - Install PostgreSQL locally or use a cloud service
+   - Create a database and user
+   - Set the `DATABASE_URL` environment variable
+
+3. **Run database migrations**:
+```bash
+export DATABASE_URL="postgresql://username:password@host:port/database"
+flask db upgrade
+```
+
+4. **Start the backend**:
+```bash
 python src/main.py
 ```
 
@@ -89,8 +107,18 @@ npm run dev
 Create a `.env` file in the backend directory:
 
 ```env
+# Database Configuration - PostgreSQL Required
+DATABASE_URL=postgresql://username:password@host:port/database
+
+# Admin Configuration
 ADMIN_TOKEN=your_admin_token_here
+
+# Flask Configuration
 FLASK_ENV=development
+SECRET_KEY=your-secret-key-here
+
+# CORS Configuration
+FRONTEND_ORIGIN=http://localhost:5173
 ```
 
 ## Usage
