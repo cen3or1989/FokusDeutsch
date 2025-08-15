@@ -9,11 +9,29 @@ import FormattedText from '@/components/ui/FormattedText'
 const SprachbausteineTeil1 = memo(() => {
   const { exam, sectionLang } = useExam()
 
-  if (!exam?.sprachbausteine_teil1) return null
+  if (!exam?.sprachbausteine_teil1) {
+    return (
+      <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Teil 1 nicht verfügbar</h3>
+            <p className="text-sm text-gray-600">
+              Der Inhalt für Sprachbausteine Teil 1 ist derzeit nicht verfügbar.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const sb1Paths = []
-  if (exam.sprachbausteine_teil1.text) sb1Paths.push('sprachbausteine_teil1.text')
-  if (Array.isArray(exam.sprachbausteine_teil1.options)) {
+  if (exam.sprachbausteine_teil1?.text) sb1Paths.push('sprachbausteine_teil1.text')
+  if (Array.isArray(exam.sprachbausteine_teil1?.options)) {
     exam.sprachbausteine_teil1.options.forEach((opt, idx) => {
       sb1Paths.push(`sprachbausteine_teil1.options[${idx}].a`)
       sb1Paths.push(`sprachbausteine_teil1.options[${idx}].b`)
@@ -40,7 +58,7 @@ const SprachbausteineTeil1 = memo(() => {
             <h4 className={getTitleTextClass('sb1', sectionLang)}>Text:</h4>
             <FormattedText
               as="p"
-              text={exam.sprachbausteine_teil1.text}
+              text={exam.sprachbausteine_teil1?.text || ''}
               className={`text-sm leading-relaxed whitespace-pre-line ${getContentTextClass('sb1', sectionLang)}`}
               isRTL={sectionLang['sb1'] === 'fa'}
               preserveLineBreaks={true}
@@ -50,7 +68,7 @@ const SprachbausteineTeil1 = memo(() => {
         
         <div className="space-y-4">
           <h4 className={`section-title ${getStaticTitleDirectionClass('sb1', sectionLang)}`}>Lücken (21-30):</h4>
-          {exam.sprachbausteine_teil1.options.map((option, index) => (
+          {(exam.sprachbausteine_teil1?.options || []).map((option, index) => (
             <div key={index} className="p-4 border rounded" style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
               <h5 className={`font-medium mb-3 ${getTitleTextClass('sb1', sectionLang)}`} style={{color: 'var(--primary-color)'}}>{index + 21}.</h5>
               <div className="space-y-1">
@@ -93,7 +111,25 @@ const SprachbausteineTeil1 = memo(() => {
 const SprachbausteineTeil2 = memo(() => {
   const { exam, sectionLang } = useExam()
 
-  if (!exam?.sprachbausteine_teil2) return null
+  if (!exam?.sprachbausteine_teil2) {
+    return (
+      <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Teil 2 nicht verfügbar</h3>
+            <p className="text-sm text-gray-600">
+              Der Inhalt für Sprachbausteine Teil 2 ist derzeit nicht verfügbar.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const sb2Paths = []
   if (exam.sprachbausteine_teil2.text) sb2Paths.push('sprachbausteine_teil2.text')

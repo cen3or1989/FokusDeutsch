@@ -18,6 +18,26 @@ const LesesverstehenTeil1 = memo(() => {
     const texts = exam?.leseverstehen_teil1?.texts || []
     if (!titles.length) return
 
+  if (!exam?.leseverstehen_teil1) {
+    return (
+      <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Teil 1 nicht verfügbar</h3>
+            <p className="text-sm text-gray-600">
+              Der Inhalt für Leseverstehen Teil 1 ist derzeit nicht verfügbar.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
     const fontPool = [
       "'Georgia', serif",
       "'Times New Roman', Times, serif",
@@ -49,11 +69,11 @@ const LesesverstehenTeil1 = memo(() => {
     setTextOrder(textDisplayOrder)
   }, [exam?.leseverstehen_teil1?.titles?.length, exam?.leseverstehen_teil1?.texts?.length])
 
-  if (!exam?.leseverstehen_teil1) return null
+
 
   const lv1Paths = [
-    ...exam.leseverstehen_teil1.titles.map((_, idx) => `leseverstehen_teil1.titles[${idx}]`),
-    ...exam.leseverstehen_teil1.texts.map((_, idx) => `leseverstehen_teil1.texts[${idx}]`)
+    ...(exam.leseverstehen_teil1?.titles || []).map((_, idx) => `leseverstehen_teil1.titles[${idx}]`),
+    ...(exam.leseverstehen_teil1?.texts || []).map((_, idx) => `leseverstehen_teil1.texts[${idx}]`)
   ]
 
   return (
@@ -117,13 +137,31 @@ const LesesverstehenTeil1 = memo(() => {
 const LesesverstehenTeil2 = memo(() => {
   const { exam, sectionLang } = useExam()
 
-  if (!exam?.leseverstehen_teil2) return null
+  if (!exam?.leseverstehen_teil2) {
+    return (
+      <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Teil 2 nicht verfügbar</h3>
+            <p className="text-sm text-gray-600">
+              Der Inhalt für Leseverstehen Teil 2 ist derzeit nicht verfügbar.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const lv2Paths = [
-    ...exam.leseverstehen_teil2.texts.map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
-    ...exam.leseverstehen_teil2.questions.flatMap((q, qIdx) => [
+    ...(exam.leseverstehen_teil2.texts || []).map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
+    ...(exam.leseverstehen_teil2.questions || []).flatMap((q, qIdx) => [
       `leseverstehen_teil2.questions[${qIdx}].question`,
-      ...q.options.map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
+      ...(q.options || []).map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
     ])
   ]
 
@@ -145,7 +183,7 @@ const LesesverstehenTeil2 = memo(() => {
           <div className="block" style={{color: 'var(--text-color)'}}>
             <h4>Text:</h4>
             <div className={`text-sm leading-relaxed space-y-4 ${getContentTextClass('lv2', sectionLang)}`}>
-              {exam.leseverstehen_teil2.texts.map((text, textIndex) => (
+              {(exam.leseverstehen_teil2.texts || []).map((text, textIndex) => (
                 <p key={textIndex}>{text}</p>
               ))}
             </div>
@@ -153,7 +191,7 @@ const LesesverstehenTeil2 = memo(() => {
           
           <div className="space-y-4">
             <h4 className={`section-title ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>Fragen:</h4>
-            {exam.leseverstehen_teil2.questions.map((question, index) => (
+            {(exam.leseverstehen_teil2.questions || []).map((question, index) => (
               <div key={index} className="p-4 border rounded" style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                 <h5 className={`font-medium mb-3 ${getTitleTextClass('lv2', sectionLang)}`} style={{color: 'var(--primary-color)'}}>
                   {index + 6}. <FormattedText
@@ -164,7 +202,7 @@ const LesesverstehenTeil2 = memo(() => {
                   />
                 </h5>
                 <div className="space-y-2">
-                  {question.options.map((option, optIndex) => (
+                  {(question.options || []).map((option, optIndex) => (
                     <div key={optIndex} className={`text-sm ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>
                       <span className="font-medium" style={{color: 'var(--primary-color)'}}>
                         {String.fromCharCode(97 + optIndex)})
@@ -190,7 +228,25 @@ const LesesverstehenTeil2 = memo(() => {
 const LesesverstehenTeil3 = memo(() => {
   const { exam, sectionLang } = useExam()
 
-  if (!exam?.leseverstehen_teil3) return null
+  if (!exam?.leseverstehen_teil3) {
+    return (
+      <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Teil 3 nicht verfügbar</h3>
+            <p className="text-sm text-gray-600">
+              Der Inhalt für Leseverstehen Teil 3 ist derzeit nicht verfügbar.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   const lv3Paths = [
     ...exam.leseverstehen_teil3.situations.map((_, idx) => `leseverstehen_teil3.situations[${idx}]`),

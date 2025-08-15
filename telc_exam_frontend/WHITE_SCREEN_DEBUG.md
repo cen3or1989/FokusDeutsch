@@ -23,6 +23,11 @@ After clicking on an exam, the page becomes completely white, indicating a React
 - JSON parsing errors
 - Timeout issues
 
+### 4. **NEW: Undefined Array Access (Teil 2 Issue)**
+- Trying to access `exam.leseverstehen_teil2.questions` when it's undefined
+- Error: `Cannot read properties of undefined (reading 'map')`
+- Missing null checks for exam data arrays
+
 ## Prevention Measures Implemented
 
 ### 1. Error Boundary Component
@@ -47,6 +52,21 @@ After clicking on an exam, the page becomes completely white, indicating a React
 - Proper loading indicators
 - Error state handling
 - Fallback UI components
+
+### 5. **NEW: Safe Array Access Pattern**
+```javascript
+// ❌ WRONG - Causes white screen
+exam.leseverstehen_teil2.questions.map(...)
+
+// ✅ CORRECT - Safe access
+(exam.leseverstehen_teil2.questions || []).map(...)
+
+// ✅ CORRECT - Nested safe access
+(exam.leseverstehen_teil2.questions || []).flatMap((q, qIdx) => [
+  `leseverstehen_teil2.questions[${qIdx}].question`,
+  ...(q.options || []).map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
+])
+```
 
 ## Debugging Tools
 
@@ -103,6 +123,49 @@ sessionStorage.getItem('last_error')
 2. Verify cleanup in useEffect hooks
 3. Monitor memory usage in browser dev tools
 
+### **Issue 5: NEW - Undefined Array Access (Teil 2 White Screen)**
+**Symptoms:** 
+- White screen when clicking on exam sections
+- Console error: `Cannot read properties of undefined (reading 'map')`
+- Error occurs in exam section components
+
+**Solution:**
+1. **Add null checks for all exam data arrays:**
+```javascript
+// Before rendering any exam data, always check:
+if (!exam?.section_name) {
+  return <ErrorComponent />
+}
+
+// When accessing arrays, use safe access:
+(exam.section_name?.array_name || []).map(...)
+```
+
+2. **Use optional chaining for nested objects:**
+```javascript
+// Instead of:
+exam.leseverstehen_teil2.questions.map(...)
+
+// Use:
+(exam.leseverstehen_teil2?.questions || []).map(...)
+```
+
+3. **Add fallback UI for missing data:**
+```javascript
+if (!exam?.leseverstehen_teil2) {
+  return (
+    <Card>
+      <CardContent>
+        <div className="text-center">
+          <h3>Teil 2 nicht verfügbar</h3>
+          <p>Der Inhalt ist derzeit nicht verfügbar.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
 ## Debugging Steps
 
 ### Step 1: Check Browser Console
@@ -135,6 +198,12 @@ sessionStorage.getItem('last_error')
 3. Test retry functionality
 4. Check navigation options
 
+### **Step 6: NEW - Check Exam Data Structure**
+1. Verify exam data has all required sections
+2. Check if arrays exist before accessing them
+3. Use safe array access patterns
+4. Add fallback UI for missing data
+
 ## Prevention Checklist
 
 ### Development
@@ -143,6 +212,8 @@ sessionStorage.getItem('last_error')
 - [ ] Validate data before rendering
 - [ ] Test error scenarios
 - [ ] Monitor performance metrics
+- [ ] **NEW: Use safe array access patterns**
+- [ ] **NEW: Add null checks for all exam data**
 
 ### Testing
 - [ ] Test with slow network connections
@@ -150,6 +221,8 @@ sessionStorage.getItem('last_error')
 - [ ] Test with backend server down
 - [ ] Test error boundary functionality
 - [ ] Test recovery mechanisms
+- [ ] **NEW: Test with missing exam sections**
+- [ ] **NEW: Test with incomplete exam data**
 
 ### Monitoring
 - [ ] Log all errors with context
@@ -157,6 +230,7 @@ sessionStorage.getItem('last_error')
 - [ ] Monitor white screen occurrences
 - [ ] Track user recovery actions
 - [ ] Analyze error patterns
+- [ ] **NEW: Monitor undefined data access**
 
 ## Emergency Recovery
 
@@ -171,6 +245,7 @@ sessionStorage.getItem('last_error')
 2. **Verify database connection** - Check data availability
 3. **Test API endpoints** - Ensure backend functionality
 4. **Review recent changes** - Identify code issues
+5. **NEW: Check exam data structure** - Verify all required fields exist
 
 ## Error Codes Reference
 
@@ -181,6 +256,7 @@ sessionStorage.getItem('last_error')
 | `white_screen` | Empty page detected | Component errors, rendering issues |
 | `global_error` | Unhandled JavaScript error | Code bugs, missing dependencies |
 | `exam_fetch_error` | Exam loading failed | Invalid ID, server issues |
+| **`undefined_array_access`** | **Trying to map undefined array** | **Missing exam sections, no null checks** |
 
 ## Performance Monitoring
 
@@ -197,6 +273,7 @@ sessionStorage.getItem('last_error')
 - Optimize bundle size
 - Implement lazy loading
 - Monitor memory leaks
+- **NEW: Use safe array access to prevent crashes**
 
 ## Support Information
 
@@ -207,6 +284,7 @@ When reporting issues, include:
 3. Network request details
 4. Browser and OS information
 5. Steps to reproduce
+6. **NEW: Exam data structure details**
 
 ### Contact Information
 - Check backend logs for detailed error information
@@ -222,6 +300,8 @@ When reporting issues, include:
 - Performance optimization
 - Enhanced monitoring
 - User feedback collection
+- **NEW: Automatic data validation**
+- **NEW: Smart fallback UI generation**
 
 ### Best Practices
 - Regular code reviews
@@ -229,3 +309,63 @@ When reporting issues, include:
 - Performance monitoring
 - Error tracking
 - User experience optimization
+- **NEW: Always use safe array access**
+- **NEW: Validate exam data structure**
+
+## **NEW: Safe Array Access Pattern Library**
+
+### For Exam Sections:
+```javascript
+// Leseverstehen Teil 1
+const titles = exam.leseverstehen_teil1?.titles || []
+const texts = exam.leseverstehen_teil1?.texts || []
+
+// Leseverstehen Teil 2
+const questions = exam.leseverstehen_teil2?.questions || []
+const texts = exam.leseverstehen_teil2?.texts || []
+
+// Sprachbausteine
+const options = exam.sprachbausteine_teil1?.options || []
+const words = exam.sprachbausteine_teil2?.words || []
+
+// Hörverstehen
+const statements = exam.hoerverstehen?.teil1?.statements || []
+
+// Schriftlicher Ausdruck
+const taskA = exam.schriftlicher_ausdruck?.task_a || ''
+const taskB = exam.schriftlicher_ausdruck?.task_b || ''
+```
+
+### For Nested Objects:
+```javascript
+// Safe nested access
+const questionOptions = question?.options || []
+const audioUrl = exam.hoerverstehen?.teil1?.audio_url || null
+
+// Safe array mapping
+const paths = (exam.leseverstehen_teil2?.questions || []).flatMap((q, qIdx) => [
+  `questions[${qIdx}].question`,
+  ...(q.options || []).map((_, oIdx) => `questions[${qIdx}].options[${oIdx}]`)
+])
+```
+
+### Error Component Template:
+```javascript
+const ErrorComponent = ({ sectionName }) => (
+  <Card style={{backgroundColor: 'var(--secondary-color)'}}>
+    <CardContent className="p-6">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold mb-2">{sectionName} nicht verfügbar</h3>
+        <p className="text-sm text-gray-600">
+          Der Inhalt für {sectionName} ist derzeit nicht verfügbar.
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+)
+```
