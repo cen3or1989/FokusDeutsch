@@ -94,6 +94,11 @@ const HoerverstehenTeil = memo(({ teil, title, instruction, questionRange }) => 
 const HoerverstehenSection = () => {
   const { hoerTab, setHoerTab } = useExam()
   
+  const handleTabChange = (value) => {
+    console.log('Hörverstehen tab changing from', hoerTab, 'to', value)
+    setHoerTab(value)
+  }
+  
   const instructions = {
     teil1: "Sie hören fünf kurze Texte. Sie hören jeden Text zweimal. Zu jedem Text lösen Sie zwei Aufgaben. Wählen Sie bei jeder Aufgabe die richtige Lösung. Lesen Sie jetzt die Aufgaben 41–50. Dafür haben Sie 60 Sekunden Zeit.",
     teil2: "Sie hören ein Gespräch. Sie hören das Gespräch einmal. Dazu lösen Sie fünf Aufgaben. Wählen Sie bei jeder Aufgabe: Sind die Aussagen Richtig oder Falsch? Lesen Sie jetzt die Aufgaben 51–55. Dafür haben Sie 60 Sekunden Zeit.",
@@ -102,7 +107,7 @@ const HoerverstehenSection = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={hoerTab} onValueChange={setHoerTab} className="w-full">
+      <Tabs value={hoerTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="tabs-pill-list w-full flex items-center gap-2 justify-start">
           <TabsTrigger value="teil1" className="tab-trigger">Teil 1 (41-45)</TabsTrigger>
           <TabsTrigger value="teil2" className="tab-trigger">Teil 2 (46-55)</TabsTrigger>

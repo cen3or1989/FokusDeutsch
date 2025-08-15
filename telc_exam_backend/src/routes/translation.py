@@ -127,12 +127,14 @@ def validate_translation_quality(original: str, translated: str, source_lang: st
         
         if not persian_chars:
             issues.append('No Persian characters found')
-            score -= 50
+            score -= 30  # Reduced penalty from 50 to 30
         
         # Allow some Latin chars for technical terms, but not too many
-        if len(latin_chars) > len(persian_chars) * 0.3:
+        # More lenient for short texts
+        max_latin_ratio = 0.5 if len(translated) < 20 else 0.3
+        if len(latin_chars) > len(persian_chars) * max_latin_ratio:
             issues.append('Too many Latin characters in Persian translation')
-            score -= 15
+            score -= 10  # Reduced penalty from 15 to 10
     
     # Preserve formatting elements
     original_numbers = re.findall(r'\d+', original)
@@ -316,22 +318,15 @@ def clean_and_format_translation(text: str, target_lang: str) -> str:
 
 def translate_text(text: str, source_lang: str, target_lang: str) -> str:
     """
-    Enhanced translation with formatting preservation, quality validation and professional formatting.
+    Simplified translation function for better reliability.
     """
     if not text or not text.strip():
         return text
     
     original_text = text.strip()
+    print(f"Translating: '{original_text}' from {source_lang} to {target_lang}")
     
-    # Step 1: Preserve formatting elements before translation
-    preserved_text, formatting_map = preserve_formatting_for_translation(original_text)
-    print(f"Preserved formatting: {formatting_map}")
-    
-    best_translation = None
-    best_score = 0
-    translation_attempts = []
-    
-    # Try multiple translation services
+    # Try translation services in order
     services = [
         ('MyMemory', translate_via_mymemory),
         ('LibreTranslate', translate_via_libretranslate),
@@ -340,60 +335,22 @@ def translate_text(text: str, source_lang: str, target_lang: str) -> str:
     
     for service_name, translate_func in services:
         try:
-            print(f"Trying {service_name} for translation...")
-            # Translate the formatting-preserved text
-            raw_translation = translate_func(preserved_text, source_lang, target_lang)
+            print(f"Trying {service_name}...")
+            result = translate_func(original_text, source_lang, target_lang)
             
-            if not raw_translation:
-                continue
-            
-            # Step 2: Restore formatting after translation
-            formatted_translation = restore_formatting_after_translation(raw_translation, formatting_map)
-            
-            # Step 3: Clean and format the translation
-            cleaned_translation = clean_and_format_translation(formatted_translation, target_lang)
-            
-            # Step 4: Validate quality (against original text, not preserved)
-            validation = validate_translation_quality(original_text, cleaned_translation, source_lang, target_lang)
-            
-            print(f"{service_name} translation quality: {validation['score']}/100")
-            if validation['issues']:
-                print(f"{service_name} issues: {validation['issues']}")
-            
-            translation_attempts.append({
-                'service': service_name,
-                'translation': cleaned_translation,
-                'score': validation['score'],
-                'valid': validation['valid'],
-                'issues': validation['issues']
-            })
-            
-            # Keep track of best translation
-            if validation['valid'] and validation['score'] > best_score:
-                best_translation = cleaned_translation
-                best_score = validation['score']
-                
-            # If we get a high-quality translation, use it
-            if validation['score'] >= 90:
-                print(f"High-quality translation found from {service_name}")
-                break
+            if result and result.strip() and result != original_text:
+                print(f"✓ {service_name} success: '{result}'")
+                # Simple validation: just check if we got a different non-empty result
+                return result.strip()
+            else:
+                print(f"✗ {service_name} failed or returned same text")
                 
         except Exception as e:
-            print(f"{service_name} translation error: {e}")
+            print(f"✗ {service_name} error: {e}")
             continue
     
-    # Choose best translation or fallback
-    if best_translation and best_score >= 70:
-        print(f"Using best translation with score: {best_score}/100")
-        return best_translation
-    elif translation_attempts:
-        # Use the highest scored translation even if below threshold
-        best_attempt = max(translation_attempts, key=lambda x: x['score'])
-        print(f"Using best available translation from {best_attempt['service']} (score: {best_attempt['score']}/100)")
-        return best_attempt['translation']
-    else:
-        print("No valid translations found, returning original text")
-        return original_text
+    print(f"No translation found, returning original: '{original_text}'")
+    return original_text
 
 
 def translate_via_libretranslate(text: str, source_lang: str, target_lang: str) -> str | None:
@@ -436,15 +393,24 @@ def translate_via_libretranslate(text: str, source_lang: str, target_lang: str) 
 
 
 @translation_bp.route('/translate', methods=['POST', 'OPTIONS'])
-@rate_limit(limit=60, window_seconds=60)
 @cross_origin()  # ensure CORS headers even on errors
 def translate_plain_text():
-    payload = request.get_json(silent=True) or {}
-    text = payload.get('text', '')
-    source_lang = payload.get('source_lang', 'DE')
-    target_lang = payload.get('target_lang', 'EN')
-    translated = translate_text(text, source_lang, target_lang)
-    return jsonify({ 'translated': translated })
+    try:
+        payload = request.get_json(silent=True) or {}
+        text = payload.get('text', '')
+        source_lang = payload.get('source_lang', 'DE')
+        target_lang = payload.get('target_lang', 'EN')
+        
+        print(f"Endpoint received: text='{text}', source_lang='{source_lang}', target_lang='{target_lang}'")
+        
+        translated = translate_text(text, source_lang, target_lang)
+        
+        print(f"Translation result: '{translated}'")
+        
+        return jsonify({ 'translated': translated })
+    except Exception as e:
+        print(f"Translation endpoint error: {e}")
+        return jsonify({ 'translated': '', 'error': str(e) })
 
 
 def iter_exam_text_fields(exam: Exam):

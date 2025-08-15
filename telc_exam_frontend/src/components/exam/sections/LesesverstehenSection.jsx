@@ -247,9 +247,14 @@ const LesesverstehenTeil3 = memo(() => {
 const LesesverstehenSection = () => {
   const { leseTab, setLeseTab } = useExam()
   
+  const handleTabChange = (value) => {
+    console.log('Tab changing from', leseTab, 'to', value)
+    setLeseTab(value)
+  }
+  
   return (
     <div className="space-y-6">
-      <Tabs value={leseTab} onValueChange={setLeseTab} className="w-full">
+      <Tabs value={leseTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="tabs-pill-list w-full flex items-center gap-2 justify-start">
           <TabsTrigger value="teil1" className="tab-trigger tab-sub">Teil 1 (1-5)</TabsTrigger>
           <TabsTrigger value="teil2" className="tab-trigger tab-sub">Teil 2 (6-10)</TabsTrigger>
