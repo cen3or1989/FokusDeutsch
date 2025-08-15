@@ -126,11 +126,19 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
   // Create a ref to store the timer
   const timerRef = useRef(null)
   
-  // Timer hook with submit callback that gets phase at runtime
-  const timer = useExamTimer(5400, () => {
-    const currentPhase = timerRef.current?.phase || 'teil1-3'
-    handleSubmitCallback(currentPhase)
-  })
+  // Timer hook with callbacks
+  const timer = useExamTimer(
+    // onPhaseChange
+    (newPhase) => {
+      // No-op for now; could be used for analytics or UI updates
+      console.log('Timer phase changed to:', newPhase)
+    },
+    // onTimeUp
+    () => {
+      const currentPhase = timerRef.current?.phase || 'teil1-3'
+      handleSubmitCallback(currentPhase)
+    }
+  )
   
   // Update the ref when timer changes
   useEffect(() => {
