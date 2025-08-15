@@ -8,6 +8,7 @@ import Landing from './components/Landing'
 import ExamInterface from './components/ExamInterface'
 import ExamResults from './components/ExamResults'
 import ErrorBoundary from './components/ErrorBoundary'
+import TestSubmission from './components/TestSubmission'
 import { Settings, BookOpen } from 'lucide-react'
 import './App.css'
 
@@ -75,6 +76,7 @@ function App() {
         <Route path="/exams" element={<ExamList onSelectExam={(id) => navigate(`/exam/${id}`)} />} />
 
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/test-submit" element={<TestSubmission />} />
         <Route path="/exam/:id" element={
           <ErrorBoundary>
             <ExamInterfaceWrapper onComplete={(result) => { setExamResult(result); navigate('/results'); }} onCancelExam={() => navigate('/')} />

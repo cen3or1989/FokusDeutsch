@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { API_BASE_URL } from '@/lib/api'
 import { useExamTimer } from '@/hooks/useExamTimer'
@@ -58,13 +58,20 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     }
 
     try {
-      const normalizedAnswers = answersHook.normalizeAnswersForSubmit()
+      let normalizedAnswers = answersHook.normalizeAnswersForSubmit()
+      
+      // Filter out schriftlicher_ausdruck when in teil1-3 phase
+      if (timerPhase === 'teil1-3') {
+        const { schriftlicher_ausdruck, ...filteredAnswers } = normalizedAnswers
+        normalizedAnswers = filteredAnswers
+      }
       
       // Debug logging
       console.log('Submitting exam with:', {
         examId,
         studentName,
-        normalizedAnswers
+        normalizedAnswers,
+        timerPhase
       })
       
       const requestBody = {
@@ -92,26 +99,51 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         try {
           const errorJson = JSON.parse(errorText)
           console.error('Error JSON:', errorJson)
+          // Show specific error message if available
+          toast.error(errorJson.error || 'Fehler beim Einreichen der Prüfung')
         } catch (e) {
           console.error('Could not parse error response as JSON')
+          toast.error('Fehler beim Einreichen der Prüfung')
         }
+        return
       }
       
       if (response.ok) {
         const result = await response.json()
+        console.log('Submission successful:', result)
         setIsSubmitted(true)
-        onComplete(result)
-      } else {
-        toast.error('Fehler beim Einreichen der Prüfung')
+        toast.success('Prüfung erfolgreich eingereicht!')
+        if (onComplete) {
+          onComplete(result)
+        }
       }
     } catch (error) {
       console.error('Submit error:', error)
-      toast.error('Fehler beim Einreichen der Prüfung')
+      toast.error('Netzwerkfehler beim Einreichen der Prüfung')
     }
   }, [studentName, examId, onComplete, answersHook])
 
-  // Timer hook with submit callback
-  const timer = useExamTimer(5400, () => handleSubmitCallback(timer?.phase || 'teil1-3'))
+  // Create a ref to store the timer
+  const timerRef = useRef(null)
+  
+  // Timer hook with callbacks
+  const timer = useExamTimer(
+    // onPhaseChange
+    (newPhase) => {
+      // No-op for now; could be used for analytics or UI updates
+      console.log('Timer phase changed to:', newPhase)
+    },
+    // onTimeUp
+    () => {
+      const currentPhase = timerRef.current?.phase || 'teil1-3'
+      handleSubmitCallback(currentPhase)
+    }
+  )
+  
+  // Update the ref when timer changes
+  useEffect(() => {
+    timerRef.current = timer
+  }, [timer])
 
   // Load exam data
   useEffect(() => {
