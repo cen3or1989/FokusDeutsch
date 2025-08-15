@@ -5,7 +5,7 @@ import { useExamTimer } from '@/hooks/useExamTimer'
 import { useExamAnswers } from '@/hooks/useExamAnswers'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAudio } from '@/hooks/useAudio'
-import { logError, logApiCall, logComponentRender } from '@/lib/debugUtils'
+import { logError, logApiCall, logComponentRender, logSubmissionAttempt, validateAnswers } from '@/lib/debugUtils'
 
 const ExamContext = createContext()
 
@@ -60,10 +60,37 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     try {
       let normalizedAnswers = answersHook.normalizeAnswersForSubmit()
       
+      // Log submission attempt for debugging
+      logSubmissionAttempt(examId, normalizedAnswers, timerPhase, studentName)
+      
+      // Validate answers before submission
+      const validation = validateAnswers(normalizedAnswers)
+      if (!validation.isValid) {
+        console.warn('Answer validation issues:', validation.issues)
+        // Don't block submission for validation issues, just log them
+      }
+      
       // Filter out schriftlicher_ausdruck when in teil1-3 phase
       if (timerPhase === 'teil1-3') {
         const { schriftlicher_ausdruck, ...filteredAnswers } = normalizedAnswers
         normalizedAnswers = filteredAnswers
+      }
+      
+      // Additional validation before submission
+      const totalAnswered = Object.values(normalizedAnswers).reduce((total, section) => {
+        if (section === 'hoerverstehen') {
+          return total + Object.values(section).reduce((hvTotal, teil) => {
+            return hvTotal + (Array.isArray(teil) ? teil.filter(v => typeof v === 'boolean').length : 0)
+          }, 0)
+        } else if (Array.isArray(section)) {
+          return total + section.filter(v => v !== '' && v !== undefined && v !== null).length
+        }
+        return total
+      }, 0)
+
+      if (totalAnswered === 0) {
+        toast.error('Bitte beantworten Sie mindestens eine Frage vor dem Einreichen')
+        return
       }
       
       // Debug logging
@@ -71,7 +98,9 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         examId,
         studentName,
         normalizedAnswers,
-        timerPhase
+        timerPhase,
+        totalAnswered,
+        validation
       })
       
       const requestBody = {
@@ -82,6 +111,7 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       
       console.log('Request body:', JSON.stringify(requestBody, null, 2))
       
+      const startTime = performance.now()
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}/submit`, {
         method: 'POST',
         headers: {
@@ -89,37 +119,86 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         },
         body: JSON.stringify(requestBody)
       })
+      const duration = performance.now() - startTime
       
       console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      const responseText = await response.text()
+      console.log('Response text:', responseText)
+      
+      // Log API call
+      logApiCall(`${API_BASE_URL}/api/exams/${examId}/submit`, 'POST', response.status, duration, {
+        examId,
+        studentName,
+        timerPhase,
+        totalAnswered
+      })
       
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
+        console.error('Error response:', responseText)
         
         try {
-          const errorJson = JSON.parse(errorText)
+          const errorJson = JSON.parse(responseText)
           console.error('Error JSON:', errorJson)
+          
           // Show specific error message if available
-          toast.error(errorJson.error || 'Fehler beim Einreichen der Prüfung')
+          const errorMessage = errorJson.error || errorJson.message || 'Fehler beim Einreichen der Prüfung'
+          toast.error(errorMessage)
+          
+          // Log detailed error information
+          logError(new Error(errorMessage), {
+            type: 'submission_error',
+            examId,
+            status: response.status,
+            errorJson,
+            requestBody
+          })
         } catch (e) {
-          console.error('Could not parse error response as JSON')
-          toast.error('Fehler beim Einreichen der Prüfung')
+          console.error('Could not parse error response as JSON:', e)
+          toast.error(`Fehler beim Einreichen der Prüfung (Status: ${response.status})`)
+          
+          logError(new Error(`HTTP ${response.status}: ${responseText}`), {
+            type: 'submission_http_error',
+            examId,
+            status: response.status,
+            responseText,
+            requestBody
+          })
         }
         return
       }
       
       if (response.ok) {
-        const result = await response.json()
+        let result
+        try {
+          result = JSON.parse(responseText)
+        } catch (e) {
+          console.error('Could not parse success response as JSON:', e)
+          toast.error('Unerwartetes Antwortformat vom Server')
+          return
+        }
+        
         console.log('Submission successful:', result)
         setIsSubmitted(true)
         toast.success('Prüfung erfolgreich eingereicht!')
+        
         if (onComplete) {
           onComplete(result)
         }
       }
     } catch (error) {
       console.error('Submit error:', error)
-      toast.error('Netzwerkfehler beim Einreichen der Prüfung')
+      
+      // Log network errors
+      logError(error, {
+        type: 'submission_network_error',
+        examId,
+        studentName,
+        timerPhase
+      })
+      
+      toast.error('Netzwerkfehler beim Einreichen der Prüfung. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
     }
   }, [studentName, examId, onComplete, answersHook])
 
