@@ -5,6 +5,7 @@ import { useExamTimer } from '@/hooks/useExamTimer'
 import { useExamAnswers } from '@/hooks/useExamAnswers'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAudio } from '@/hooks/useAudio'
+import { logError, logApiCall, logComponentRender } from '@/lib/debugUtils'
 
 const ExamContext = createContext()
 
@@ -134,14 +135,58 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
   }, [isSubmitted])
 
   const fetchExam = async () => {
+    const startTime = performance.now()
+    
     try {
       setLoading(true)
+      logComponentRender('ExamContext', { examId })
+      
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}`)
+      const duration = performance.now() - startTime
+      
+      logApiCall(`${API_BASE_URL}/api/exams/${examId}`, 'GET', response.status, duration)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        const error = new Error(`Failed to fetch exam: ${response.status} ${response.statusText}`)
+        logError(error, { 
+          type: 'api_error',
+          examId,
+          responseText: errorText,
+          status: response.status
+        })
+        throw error
+      }
+      
       const data = await response.json()
+      
+      if (!data || !data.id) {
+        const error = new Error('Invalid exam data received from server')
+        logError(error, { 
+          type: 'invalid_data',
+          examId,
+          data: data
+        })
+        throw error
+      }
+      
       setExam(data)
       setOriginalExam(structuredClone(data))
+      console.log('Exam loaded successfully')
     } catch (error) {
-      console.error('Failed to fetch exam:', error)
+      logError(error, { 
+        type: 'exam_fetch_error',
+        examId,
+        duration: performance.now() - startTime
+      })
+      
+      // Set a minimal exam object to prevent white screen
+      setExam({
+        id: examId,
+        title: 'Prüfung',
+        error: true,
+        errorMessage: error.message
+      })
     } finally {
       setLoading(false)
     }

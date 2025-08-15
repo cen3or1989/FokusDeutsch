@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { Toaster } from '@/components/ui/sonner'
+import { initDebugUtils } from './lib/debugUtils'
+
+// Initialize debug utilities
+initDebugUtils()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
