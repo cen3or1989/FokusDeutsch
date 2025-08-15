@@ -157,11 +157,13 @@ const LesesverstehenTeil2 = memo(() => {
     )
   }
 
+  const texts = Array.isArray(exam.leseverstehen_teil2.texts) ? exam.leseverstehen_teil2.texts : []
+  const questions = Array.isArray(exam.leseverstehen_teil2.questions) ? exam.leseverstehen_teil2.questions : []
   const lv2Paths = [
-    ...(exam.leseverstehen_teil2.texts || []).map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
-    ...(exam.leseverstehen_teil2.questions || []).flatMap((q, qIdx) => [
+    ...exam.leseverstehen_teil2.texts.map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
+    ...exam.leseverstehen_teil2.questions.flatMap((q, qIdx) => [
       `leseverstehen_teil2.questions[${qIdx}].question`,
-      ...(q.options || []).map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
+      ...q.options.map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
     ])
   ]
 
@@ -183,7 +185,7 @@ const LesesverstehenTeil2 = memo(() => {
           <div className="block" style={{color: 'var(--text-color)'}}>
             <h4>Text:</h4>
             <div className={`text-sm leading-relaxed space-y-4 ${getContentTextClass('lv2', sectionLang)}`}>
-              {(exam.leseverstehen_teil2.texts || []).map((text, textIndex) => (
+              {exam.leseverstehen_teil2.texts.map((text, textIndex) => (
                 <p key={textIndex}>{text}</p>
               ))}
             </div>
@@ -191,18 +193,18 @@ const LesesverstehenTeil2 = memo(() => {
           
           <div className="space-y-4">
             <h4 className={`section-title ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>Fragen:</h4>
-            {(exam.leseverstehen_teil2.questions || []).map((question, index) => (
+            {exam.leseverstehen_teil2.questions.map((question, index) => (
               <div key={index} className="p-4 border rounded" style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                 <h5 className={`font-medium mb-3 ${getTitleTextClass('lv2', sectionLang)}`} style={{color: 'var(--primary-color)'}}>
                   {index + 6}. <FormattedText
-                    text={question.question}
+                    text={question?.question || ''}
                     className={getContentTextClass('lv2', sectionLang)}
                     isRTL={sectionLang['lv2'] === 'fa'}
                     preserveLineBreaks={true}
                   />
                 </h5>
                 <div className="space-y-2">
-                  {(question.options || []).map((option, optIndex) => (
+                  {question.options.map((option, optIndex) => (
                     <div key={optIndex} className={`text-sm ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>
                       <span className="font-medium" style={{color: 'var(--primary-color)'}}>
                         {String.fromCharCode(97 + optIndex)})
