@@ -51,17 +51,30 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
   const audio = useAudio()
 
   // Handle submit function - without timer dependency to avoid circular dependency
-  const handleSubmitCallback = useCallback(async (timerPhase = 'teil1-3') => {
+  const handleSubmitCallback = useCallback(async (timerPhase = null) => {
     if (!studentName.trim()) {
       toast.error('Bitte geben Sie Ihren Namen ein')
       return
+    }
+
+    // Determine the correct timer phase if not provided
+    let currentTimerPhase = timerPhase
+    if (!currentTimerPhase || typeof currentTimerPhase !== 'string') {
+      // Get the current timer phase from the timer hook
+      currentTimerPhase = timer.phase || 'teil1-3'
+    }
+
+    // Safety check to ensure we have a valid timer phase
+    if (!['teil1-3', 'schriftlich'].includes(currentTimerPhase)) {
+      console.warn('Invalid timer phase detected, defaulting to teil1-3:', currentTimerPhase)
+      currentTimerPhase = 'teil1-3'
     }
 
     try {
       let normalizedAnswers = answersHook.normalizeAnswersForSubmit()
       
       // Log submission attempt for debugging
-      logSubmissionAttempt(examId, normalizedAnswers, timerPhase, studentName)
+      logSubmissionAttempt(examId, normalizedAnswers, currentTimerPhase, studentName)
       
       // Validate answers before submission
       const validation = validateAnswers(normalizedAnswers)
@@ -71,7 +84,7 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       }
       
       // Filter out schriftlicher_ausdruck when in teil1-3 phase
-      if (timerPhase === 'teil1-3') {
+      if (currentTimerPhase === 'teil1-3') {
         const { schriftlicher_ausdruck, ...filteredAnswers } = normalizedAnswers
         normalizedAnswers = filteredAnswers
       }
@@ -93,20 +106,21 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         return
       }
       
-      // Debug logging
-      console.log('Submitting exam with:', {
+      // Debug logging - use a safe object for logging
+      const debugInfo = {
         examId,
         studentName,
-        normalizedAnswers,
-        timerPhase,
+        timerPhase: currentTimerPhase,
         totalAnswered,
-        validation
-      })
+        validationIssues: validation.issues,
+        answerSections: Object.keys(normalizedAnswers)
+      }
+      console.log('Submitting exam with:', debugInfo)
       
       const requestBody = {
         student_name: studentName,
         answers: normalizedAnswers,
-        timer_phase: timerPhase
+        timer_phase: currentTimerPhase
       }
       
       console.log('Request body:', JSON.stringify(requestBody, null, 2))
@@ -131,7 +145,7 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       logApiCall(`${API_BASE_URL}/api/exams/${examId}/submit`, 'POST', response.status, duration, {
         examId,
         studentName,
-        timerPhase,
+        timerPhase: currentTimerPhase,
         totalAnswered
       })
       
@@ -152,7 +166,11 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
             examId,
             status: response.status,
             errorJson,
-            requestBody
+            requestBody: {
+              student_name: requestBody.student_name,
+              timer_phase: requestBody.timer_phase,
+              answerSections: Object.keys(requestBody.answers)
+            }
           })
         } catch (e) {
           console.error('Could not parse error response as JSON:', e)
@@ -163,7 +181,11 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
             examId,
             status: response.status,
             responseText,
-            requestBody
+            requestBody: {
+              student_name: requestBody.student_name,
+              timer_phase: requestBody.timer_phase,
+              answerSections: Object.keys(requestBody.answers)
+            }
           })
         }
         return
@@ -195,12 +217,12 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         type: 'submission_network_error',
         examId,
         studentName,
-        timerPhase
+        timerPhase: currentTimerPhase
       })
       
       toast.error('Netzwerkfehler beim Einreichen der Prüfung. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
     }
-  }, [studentName, examId, onComplete, answersHook])
+  }, [studentName, examId, onComplete, answersHook, timer.phase])
 
   // Create a ref to store the timer
   const timerRef = useRef(null)

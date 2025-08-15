@@ -79,32 +79,55 @@ export const logComponentRender = (componentName, props = {}) => {
 }
 
 export const logSubmissionAttempt = (examId, answers, timerPhase, studentName) => {
+  // Safely extract answer summary to prevent circular references
+  const getAnswerSummary = (answers) => {
+    if (!answers || typeof answers !== 'object') {
+      return { error: 'Invalid answers object' }
+    }
+
+    try {
+      return {
+        leseverstehen_teil1: Array.isArray(answers.leseverstehen_teil1) ? answers.leseverstehen_teil1.filter(Boolean).length : 0,
+        leseverstehen_teil2: Array.isArray(answers.leseverstehen_teil2) ? answers.leseverstehen_teil2.filter(Boolean).length : 0,
+        leseverstehen_teil3: Array.isArray(answers.leseverstehen_teil3) ? answers.leseverstehen_teil3.filter(Boolean).length : 0,
+        sprachbausteine_teil1: Array.isArray(answers.sprachbausteine_teil1) ? answers.sprachbausteine_teil1.filter(Boolean).length : 0,
+        sprachbausteine_teil2: Array.isArray(answers.sprachbausteine_teil2) ? answers.sprachbausteine_teil2.filter(Boolean).length : 0,
+        hoerverstehen_teil1: answers.hoerverstehen?.teil1 ? answers.hoerverstehen.teil1.filter(v => typeof v === 'boolean').length : 0,
+        hoerverstehen_teil2: answers.hoerverstehen?.teil2 ? answers.hoerverstehen.teil2.filter(v => typeof v === 'boolean').length : 0,
+        hoerverstehen_teil3: answers.hoerverstehen?.teil3 ? answers.hoerverstehen.teil3.filter(v => typeof v === 'boolean').length : 0,
+        hasSchriftlicherAusdruck: !!(answers.schriftlicher_ausdruck?.selected_task)
+      }
+    } catch (error) {
+      return { error: 'Failed to process answers' }
+    }
+  }
+
+  const getTotalAnswered = (answers) => {
+    if (!answers || typeof answers !== 'object') return 0
+
+    try {
+      return Object.values(answers).reduce((total, section) => {
+        if (section === 'hoerverstehen' && typeof section === 'object') {
+          return total + Object.values(section).reduce((hvTotal, teil) => {
+            return hvTotal + (Array.isArray(teil) ? teil.filter(v => typeof v === 'boolean').length : 0)
+          }, 0)
+        } else if (Array.isArray(section)) {
+          return total + section.filter(v => v !== '' && v !== undefined && v !== null).length
+        }
+        return total
+      }, 0)
+    } catch (error) {
+      return 0
+    }
+  }
+
   const submissionLog = {
     timestamp: new Date().toISOString(),
     examId,
     timerPhase,
     studentName,
-    answersSummary: {
-      leseverstehen_teil1: answers.leseverstehen_teil1?.filter(Boolean).length || 0,
-      leseverstehen_teil2: answers.leseverstehen_teil2?.filter(Boolean).length || 0,
-      leseverstehen_teil3: answers.leseverstehen_teil3?.filter(Boolean).length || 0,
-      sprachbausteine_teil1: answers.sprachbausteine_teil1?.filter(Boolean).length || 0,
-      sprachbausteine_teil2: answers.sprachbausteine_teil2?.filter(Boolean).length || 0,
-      hoerverstehen_teil1: answers.hoerverstehen?.teil1?.filter(v => typeof v === 'boolean').length || 0,
-      hoerverstehen_teil2: answers.hoerverstehen?.teil2?.filter(v => typeof v === 'boolean').length || 0,
-      hoerverstehen_teil3: answers.hoerverstehen?.teil3?.filter(v => typeof v === 'boolean').length || 0,
-      hasSchriftlicherAusdruck: !!answers.schriftlicher_ausdruck?.selected_task
-    },
-    totalAnswered: Object.values(answers).reduce((total, section) => {
-      if (section === 'hoerverstehen') {
-        return total + Object.values(section).reduce((hvTotal, teil) => {
-          return hvTotal + (Array.isArray(teil) ? teil.filter(v => typeof v === 'boolean').length : 0)
-        }, 0)
-      } else if (Array.isArray(section)) {
-        return total + section.filter(v => v !== '' && v !== undefined && v !== null).length
-      }
-      return total
-    }, 0)
+    answersSummary: getAnswerSummary(answers),
+    totalAnswered: getTotalAnswered(answers)
   }
   
   console.log('📝 Submission attempt logged:', submissionLog)
