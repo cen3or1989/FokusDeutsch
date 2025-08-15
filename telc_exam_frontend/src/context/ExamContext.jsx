@@ -44,6 +44,11 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     })
   }, [currentSection])
 
+  // Custom hooks - MUST be defined before using them
+  const answersHook = useExamAnswers(exam || {}) // Pass empty object if exam is null
+  const translation = useTranslation(examId)
+  const audio = useAudio()
+
   // Handle submit function
   const handleSubmitCallback = useCallback(async () => {
     if (!studentName.trim()) {
@@ -54,16 +59,41 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
     try {
       const normalizedAnswers = answersHook.normalizeAnswersForSubmit()
       
+      // Debug logging
+      console.log('Submitting exam with:', {
+        examId,
+        studentName,
+        normalizedAnswers
+      })
+      
+      const requestBody = {
+        student_name: studentName,
+        answers: normalizedAnswers
+      }
+      
+      console.log('Request body:', JSON.stringify(requestBody, null, 2))
+      
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          student_name: studentName,
-          answers: normalizedAnswers
-        })
+        body: JSON.stringify(requestBody)
       })
+      
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Error response:', errorText)
+        
+        try {
+          const errorJson = JSON.parse(errorText)
+          console.error('Error JSON:', errorJson)
+        } catch (e) {
+          console.error('Could not parse error response as JSON')
+        }
+      }
       
       if (response.ok) {
         const result = await response.json()
@@ -76,13 +106,10 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       console.error('Submit error:', error)
       toast.error('Fehler beim Einreichen der Prüfung')
     }
-  }, [studentName, examId, onComplete])
+  }, [studentName, examId, onComplete, answersHook])
 
-  // Custom hooks
+  // Timer hook MUST come after handleSubmitCallback
   const timer = useExamTimer(5400, handleSubmitCallback)
-  const answersHook = useExamAnswers(exam || {}) // Pass empty object if exam is null
-  const translation = useTranslation(examId)
-  const audio = useAudio()
 
   // Load exam data
   useEffect(() => {
