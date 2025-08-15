@@ -253,109 +253,132 @@ def delete_exam(exam_id):
 @rate_limit(limit=30, window_seconds=60)
 def submit_exam(exam_id):
     """Submit student answers and calculate score"""
-    exam = Exam.query.get_or_404(exam_id)
-    data = request.get_json()
-    
-    student_answers = data.get('answers', {})
-    student_name = data.get('student_name', 'Unbekannt')
-    
-    # Calculate total score
-    total_score = 0
-    max_score = 60  # 60 total questions
-    
-    # Grade Leseverstehen Teil 1 (5 points)
-    if 'leseverstehen_teil1' in student_answers:
-        correct_answers = json.loads(exam.lv1_answers) if exam.lv1_answers else []
-        student_lv1 = student_answers['leseverstehen_teil1']
-        for i, correct in enumerate(correct_answers):
-            if i < len(student_lv1) and student_lv1[i] == correct:
-                total_score += 1
-    
-    # Grade Leseverstehen Teil 2 (5 points)
-    if 'leseverstehen_teil2' in student_answers:
-        correct_answers = json.loads(exam.lv2_answers) if exam.lv2_answers else []
-        student_lv2 = student_answers['leseverstehen_teil2']
-        for i, correct in enumerate(correct_answers):
-            if i < len(student_lv2) and student_lv2[i] == correct:
-                total_score += 1
-    
-    # Grade Leseverstehen Teil 3 (10 points)
-    if 'leseverstehen_teil3' in student_answers:
-        correct_answers = json.loads(exam.lv3_answers) if exam.lv3_answers else []
-        student_lv3 = student_answers['leseverstehen_teil3']
-        for i, correct in enumerate(correct_answers):
-            if i < len(student_lv3) and student_lv3[i] == correct:
-                total_score += 1
-    
-    # Grade Sprachbausteine Teil 1 (10 points)
-    if 'sprachbausteine_teil1' in student_answers:
-        correct_answers = json.loads(exam.sb1_answers) if exam.sb1_answers else []
-        student_sb1 = student_answers['sprachbausteine_teil1']
-        for i, correct in enumerate(correct_answers):
-            if i < len(student_sb1) and student_sb1[i] == correct:
-                total_score += 1
-    
-    # Grade Sprachbausteine Teil 2 (10 points)
-    if 'sprachbausteine_teil2' in student_answers:
-        correct_answers = json.loads(exam.sb2_answers) if exam.sb2_answers else []
-        student_sb2 = student_answers['sprachbausteine_teil2']
-        for i, correct in enumerate(correct_answers):
-            if i < len(student_sb2) and student_sb2[i] == correct:
-                total_score += 1
-    
-    # Grade Hörverstehen (20 points)
-    if 'hoerverstehen' in student_answers:
-        hv_answers = student_answers['hoerverstehen']
+    try:
+        exam = Exam.query.get_or_404(exam_id)
         
-        # Teil 1 (5 points)
-        if 'teil1' in hv_answers:
-            correct_answers = json.loads(exam.hv1_answers) if exam.hv1_answers else []
+        # Debug logging
+        print(f"Submit exam {exam_id} - Request headers: {dict(request.headers)}")
+        print(f"Submit exam {exam_id} - Content-Type: {request.content_type}")
+        print(f"Submit exam {exam_id} - Content-Length: {request.content_length}")
+        
+        # Check if request has JSON content
+        if not request.is_json:
+            print(f"Submit exam {exam_id} - Request is not JSON")
+            return jsonify({'error': 'Request must be JSON'}), 400
+            
+        data = request.get_json(force=True)
+        
+        if not data:
+            print(f"Submit exam {exam_id} - No data in request")
+            return jsonify({'error': 'No data provided'}), 400
+        
+        print(f"Submit exam {exam_id} - Received data: {data}")
+        
+        student_answers = data.get('answers', {})
+        student_name = data.get('student_name', 'Unbekannt')
+        
+        if not student_name or not student_name.strip():
+            return jsonify({'error': 'Student name is required'}), 400
+            
+        if not student_answers:
+            return jsonify({'error': 'Answers are required'}), 400
+    
+        # Calculate total score
+        total_score = 0
+        max_score = 60  # 60 total questions
+    
+        # Grade Leseverstehen Teil 1 (5 points)
+        if 'leseverstehen_teil1' in student_answers:
+            correct_answers = json.loads(exam.lv1_answers) if exam.lv1_answers else []
+            student_lv1 = student_answers['leseverstehen_teil1']
             for i, correct in enumerate(correct_answers):
-                if i < len(hv_answers['teil1']) and hv_answers['teil1'][i] == correct:
+                if i < len(student_lv1) and student_lv1[i] == correct:
                     total_score += 1
         
-        # Teil 2 (10 points)
-        if 'teil2' in hv_answers:
-            correct_answers = json.loads(exam.hv2_answers) if exam.hv2_answers else []
+        # Grade Leseverstehen Teil 2 (5 points)
+        if 'leseverstehen_teil2' in student_answers:
+            correct_answers = json.loads(exam.lv2_answers) if exam.lv2_answers else []
+            student_lv2 = student_answers['leseverstehen_teil2']
             for i, correct in enumerate(correct_answers):
-                if i < len(hv_answers['teil2']) and hv_answers['teil2'][i] == correct:
+                if i < len(student_lv2) and student_lv2[i] == correct:
                     total_score += 1
         
-        # Teil 3 (5 points)
-        if 'teil3' in hv_answers:
-            correct_answers = json.loads(exam.hv3_answers) if exam.hv3_answers else []
+        # Grade Leseverstehen Teil 3 (10 points)
+        if 'leseverstehen_teil3' in student_answers:
+            correct_answers = json.loads(exam.lv3_answers) if exam.lv3_answers else []
+            student_lv3 = student_answers['leseverstehen_teil3']
             for i, correct in enumerate(correct_answers):
-                if i < len(hv_answers['teil3']) and hv_answers['teil3'][i] == correct:
+                if i < len(student_lv3) and student_lv3[i] == correct:
                     total_score += 1
+        
+        # Grade Sprachbausteine Teil 1 (10 points)
+        if 'sprachbausteine_teil1' in student_answers:
+            correct_answers = json.loads(exam.sb1_answers) if exam.sb1_answers else []
+            student_sb1 = student_answers['sprachbausteine_teil1']
+            for i, correct in enumerate(correct_answers):
+                if i < len(student_sb1) and student_sb1[i] == correct:
+                    total_score += 1
+        
+        # Grade Sprachbausteine Teil 2 (10 points)
+        if 'sprachbausteine_teil2' in student_answers:
+            correct_answers = json.loads(exam.sb2_answers) if exam.sb2_answers else []
+            student_sb2 = student_answers['sprachbausteine_teil2']
+            for i, correct in enumerate(correct_answers):
+                if i < len(student_sb2) and student_sb2[i] == correct:
+                    total_score += 1
+        
+        # Grade Hörverstehen (20 points total)
+        if 'hoerverstehen' in student_answers:
+            hv_answers = student_answers['hoerverstehen']
+            
+            # Teil 1 (5 points)
+            if 'teil1' in hv_answers:
+                correct_answers = json.loads(exam.hv1_answers) if exam.hv1_answers else []
+                for i, correct in enumerate(correct_answers):
+                    if i < len(hv_answers['teil1']) and hv_answers['teil1'][i] == correct:
+                        total_score += 1
+            
+            # Teil 2 (10 points)
+            if 'teil2' in hv_answers:
+                correct_answers = json.loads(exam.hv2_answers) if exam.hv2_answers else []
+                for i, correct in enumerate(correct_answers):
+                    if i < len(hv_answers['teil2']) and hv_answers['teil2'][i] == correct:
+                        total_score += 1
+            
+            # Teil 3 (5 points)
+            if 'teil3' in hv_answers:
+                correct_answers = json.loads(exam.hv3_answers) if exam.hv3_answers else []
+                for i, correct in enumerate(correct_answers):
+                    if i < len(hv_answers['teil3']) and hv_answers['teil3'][i] == correct:
+                        total_score += 1
+        
+        # Calculate percentage score
+        score_percentage = (total_score / max_score) * 100
+        
+        # Persist result
+        result = ExamResult(
+            exam_id=exam_id,
+            student_name=student_name,
+            answers=json.dumps(student_answers),
+            score=score_percentage
+        )
+        
+        db.session.add(result)
+        db.session.commit()
+        
+        return jsonify({
+            'score': score_percentage,
+            'total_score': total_score,
+            'max_score': max_score,
+            'result_id': result.id
+        })
     
-    # Calculate percentage score
-    score_percentage = (total_score / max_score) * 100
-    
-    # Persist result
-    result = ExamResult(
-        exam_id=exam_id,
-        student_name=student_name,
-        answers=json.dumps(student_answers),
-        score=score_percentage
-    )
-    
-    db.session.add(result)
-    db.session.commit()
-    
-    return jsonify({
-        'result_id': result.id,
-        'total_score': total_score,
-        'max_score': max_score,
-        'score_percentage': score_percentage,
-        'detailed_scores': {
-            'leseverstehen_teil1': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv1_answers) if exam.lv1_answers else []) if i < len(student_answers.get('leseverstehen_teil1', [])) and student_answers['leseverstehen_teil1'][i] == correct)}/5",
-            'leseverstehen_teil2': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv2_answers) if exam.lv2_answers else []) if i < len(student_answers.get('leseverstehen_teil2', [])) and student_answers['leseverstehen_teil2'][i] == correct)}/5",
-            'leseverstehen_teil3': f"{sum(1 for i, correct in enumerate(json.loads(exam.lv3_answers) if exam.lv3_answers else []) if i < len(student_answers.get('leseverstehen_teil3', [])) and student_answers['leseverstehen_teil3'][i] == correct)}/10",
-            'sprachbausteine_teil1': f"{sum(1 for i, correct in enumerate(json.loads(exam.sb1_answers) if exam.sb1_answers else []) if i < len(student_answers.get('sprachbausteine_teil1', [])) and student_answers['sprachbausteine_teil1'][i] == correct)}/10",
-            'sprachbausteine_teil2': f"{sum(1 for i, correct in enumerate(json.loads(exam.sb2_answers) if exam.sb2_answers else []) if i < len(student_answers.get('sprachbausteine_teil2', [])) and student_answers['sprachbausteine_teil2'][i] == correct)}/10",
-            'hoerverstehen': f"{sum(1 for teil in ['teil1', 'teil2', 'teil3'] for i, correct in enumerate(json.loads(getattr(exam, f'hv{teil[-1]}_answers')) if getattr(exam, f'hv{teil[-1]}_answers') else []) if i < len(student_answers.get('hoerverstehen', {}).get(teil, [])) and student_answers['hoerverstehen'][teil][i] == correct)}/20"
-        }
-    })
+    except Exception as e:
+        print(f"Submit exam {exam_id} - Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error', 'message': str(e)}), 500
 
 @exam_bp.route('/results/<int:result_id>', methods=['GET'])
 def get_result(result_id):
