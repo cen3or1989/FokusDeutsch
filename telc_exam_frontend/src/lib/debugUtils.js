@@ -1,186 +1,232 @@
-// Debug utilities for tracking and preventing white screen issues
+// Debug utilities for exam submission tracking
 
-// Global error tracking
-window.examDebugInfo = {
-  errors: [],
-  warnings: [],
-  apiCalls: [],
-  componentRenders: [],
-  lastError: null
-}
-
-// Enhanced error logging
 export const logError = (error, context = {}) => {
-  const errorInfo = {
+  const errorLog = {
     timestamp: new Date().toISOString(),
-    message: error.message,
-    stack: error.stack,
-    name: error.name,
+    error: {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    },
     context,
-    url: window.location.href,
-    userAgent: navigator.userAgent
+    userAgent: navigator.userAgent,
+    url: window.location.href
   }
   
-  console.error('Exam Error:', errorInfo)
+  console.error('🔴 Error logged:', errorLog)
   
-  // Store in global debug info
-  window.examDebugInfo.errors.push(errorInfo)
-  window.examDebugInfo.lastError = errorInfo
-  
-  // Store in session storage for debugging
+  // Store in localStorage for debugging
   try {
-    sessionStorage.setItem('exam_errors', JSON.stringify(window.examDebugInfo.errors))
+    const existingLogs = JSON.parse(localStorage.getItem('exam_error_logs') || '[]')
+    existingLogs.push(errorLog)
+    
+    // Keep only last 50 errors
+    if (existingLogs.length > 50) {
+      existingLogs.splice(0, existingLogs.length - 50)
+    }
+    
+    localStorage.setItem('exam_error_logs', JSON.stringify(existingLogs))
   } catch (e) {
-    console.error('Failed to store error in session storage:', e)
+    console.error('Failed to store error log:', e)
   }
-  
-  return errorInfo
 }
 
-// API call tracking
-export const logApiCall = (url, method, status, duration, error = null) => {
-  const apiCall = {
+export const logApiCall = (url, method, status, duration, context = {}) => {
+  const apiLog = {
     timestamp: new Date().toISOString(),
     url,
     method,
     status,
     duration,
-    error: error ? error.message : null
+    context
   }
   
-  console.log('API Call:', apiCall)
-  window.examDebugInfo.apiCalls.push(apiCall)
+  console.log('🌐 API call logged:', apiLog)
+  
+  // Store in localStorage for debugging
+  try {
+    const existingLogs = JSON.parse(localStorage.getItem('exam_api_logs') || '[]')
+    existingLogs.push(apiLog)
+    
+    // Keep only last 100 API calls
+    if (existingLogs.length > 100) {
+      existingLogs.splice(0, existingLogs.length - 100)
+    }
+    
+    localStorage.setItem('exam_api_logs', JSON.stringify(existingLogs))
+  } catch (e) {
+    console.error('Failed to store API log:', e)
+  }
 }
 
-// Component render tracking
 export const logComponentRender = (componentName, props = {}) => {
-  const renderInfo = {
+  const renderLog = {
     timestamp: new Date().toISOString(),
     component: componentName,
-    props: Object.keys(props),
-    url: window.location.href
+    props: Object.keys(props).reduce((acc, key) => {
+      // Don't log large objects or functions
+      const value = props[key]
+      if (typeof value === 'function' || (typeof value === 'object' && value !== null && Object.keys(value).length > 10)) {
+        acc[key] = typeof value === 'function' ? '[Function]' : '[Large Object]'
+      } else {
+        acc[key] = value
+      }
+      return acc
+    }, {})
   }
   
-  window.examDebugInfo.componentRenders.push(renderInfo)
-  
-  // Keep only last 50 renders to prevent memory issues
-  if (window.examDebugInfo.componentRenders.length > 50) {
-    window.examDebugInfo.componentRenders = window.examDebugInfo.componentRenders.slice(-50)
-  }
+  console.log('🎨 Component render logged:', renderLog)
 }
 
-// Performance monitoring
-export const measurePerformance = (name, fn) => {
-  const start = performance.now()
-  try {
-    const result = fn()
-    const duration = performance.now() - start
-    console.log(`Performance [${name}]: ${duration.toFixed(2)}ms`)
-    return result
-  } catch (error) {
-    const duration = performance.now() - start
-    console.error(`Performance [${name}] failed after ${duration.toFixed(2)}ms:`, error)
-    throw error
-  }
-}
+export const logSubmissionAttempt = (examId, answers, timerPhase, studentName) => {
+  // Safely extract answer summary to prevent circular references
+  const getAnswerSummary = (answers) => {
+    if (!answers || typeof answers !== 'object') {
+      return { error: 'Invalid answers object' }
+    }
 
-// White screen detection
-export const detectWhiteScreen = () => {
-  // Check if page is mostly white/empty
-  const body = document.body
-  const html = document.documentElement
-  
-  // Check if body has content
-  if (!body.children.length) {
-    logError(new Error('White screen detected: No body children'), { type: 'white_screen' })
-    return true
+    try {
+      return {
+        leseverstehen_teil1: Array.isArray(answers.leseverstehen_teil1) ? answers.leseverstehen_teil1.filter(Boolean).length : 0,
+        leseverstehen_teil2: Array.isArray(answers.leseverstehen_teil2) ? answers.leseverstehen_teil2.filter(Boolean).length : 0,
+        leseverstehen_teil3: Array.isArray(answers.leseverstehen_teil3) ? answers.leseverstehen_teil3.filter(Boolean).length : 0,
+        sprachbausteine_teil1: Array.isArray(answers.sprachbausteine_teil1) ? answers.sprachbausteine_teil1.filter(Boolean).length : 0,
+        sprachbausteine_teil2: Array.isArray(answers.sprachbausteine_teil2) ? answers.sprachbausteine_teil2.filter(Boolean).length : 0,
+        hoerverstehen_teil1: answers.hoerverstehen?.teil1 ? answers.hoerverstehen.teil1.filter(v => typeof v === 'boolean').length : 0,
+        hoerverstehen_teil2: answers.hoerverstehen?.teil2 ? answers.hoerverstehen.teil2.filter(v => typeof v === 'boolean').length : 0,
+        hoerverstehen_teil3: answers.hoerverstehen?.teil3 ? answers.hoerverstehen.teil3.filter(v => typeof v === 'boolean').length : 0,
+        hasSchriftlicherAusdruck: !!(answers.schriftlicher_ausdruck?.selected_task)
+      }
+    } catch (error) {
+      return { error: 'Failed to process answers' }
+    }
   }
-  
-  // Check if main content area is empty
-  const mainContent = body.querySelector('main') || body.querySelector('.container') || body
-  if (mainContent && mainContent.children.length === 0) {
-    logError(new Error('White screen detected: Empty main content'), { type: 'white_screen' })
-    return true
-  }
-  
-  return false
-}
 
-// Auto-recovery from white screen
-export const setupWhiteScreenRecovery = () => {
-  let whiteScreenTimeout
-  
-  const checkForWhiteScreen = () => {
-    if (detectWhiteScreen()) {
-      console.warn('White screen detected, attempting recovery...')
-      
-      // Try to reload the page after a short delay
-      setTimeout(() => {
-        if (detectWhiteScreen()) {
-          console.error('White screen persists, reloading page...')
-          window.location.reload()
+  const getTotalAnswered = (answers) => {
+    if (!answers || typeof answers !== 'object') return 0
+
+    try {
+      return Object.values(answers).reduce((total, section) => {
+        if (section === 'hoerverstehen' && typeof section === 'object') {
+          return total + Object.values(section).reduce((hvTotal, teil) => {
+            return hvTotal + (Array.isArray(teil) ? teil.filter(v => typeof v === 'boolean').length : 0)
+          }, 0)
+        } else if (Array.isArray(section)) {
+          return total + section.filter(v => v !== '' && v !== undefined && v !== null).length
         }
-      }, 2000)
+        return total
+      }, 0)
+    } catch (error) {
+      return 0
     }
   }
-  
-  // Check for white screen after page load
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(checkForWhiteScreen, 1000)
-    })
-  } else {
-    setTimeout(checkForWhiteScreen, 1000)
+
+  const submissionLog = {
+    timestamp: new Date().toISOString(),
+    examId,
+    timerPhase,
+    studentName,
+    answersSummary: getAnswerSummary(answers),
+    totalAnswered: getTotalAnswered(answers)
   }
   
-  // Set up periodic checks
-  whiteScreenTimeout = setInterval(checkForWhiteScreen, 5000)
+  console.log('📝 Submission attempt logged:', submissionLog)
   
-  // Clean up on page unload
-  window.addEventListener('beforeunload', () => {
-    if (whiteScreenTimeout) {
-      clearInterval(whiteScreenTimeout)
+  // Store in localStorage for debugging
+  try {
+    const existingLogs = JSON.parse(localStorage.getItem('exam_submission_logs') || '[]')
+    existingLogs.push(submissionLog)
+    
+    // Keep only last 20 submissions
+    if (existingLogs.length > 20) {
+      existingLogs.splice(0, existingLogs.length - 20)
     }
-  })
+    
+    localStorage.setItem('exam_submission_logs', JSON.stringify(existingLogs))
+  } catch (e) {
+    console.error('Failed to store submission log:', e)
+  }
 }
 
-// Debug info export
 export const getDebugInfo = () => {
-  return {
-    ...window.examDebugInfo,
-    sessionStorage: {
-      exam_errors: sessionStorage.getItem('exam_errors'),
-      exam_fetch_error: sessionStorage.getItem('exam_fetch_error'),
-      last_error: sessionStorage.getItem('last_error'),
-      exam_in_progress: sessionStorage.getItem('exam_in_progress')
+  try {
+    const errorLogs = JSON.parse(localStorage.getItem('exam_error_logs') || '[]')
+    const apiLogs = JSON.parse(localStorage.getItem('exam_api_logs') || '[]')
+    const submissionLogs = JSON.parse(localStorage.getItem('exam_submission_logs') || '[]')
+    
+    return {
+      errorLogs: errorLogs.slice(-10), // Last 10 errors
+      apiLogs: apiLogs.slice(-20), // Last 20 API calls
+      submissionLogs: submissionLogs.slice(-5), // Last 5 submissions
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      timestamp: new Date().toISOString()
     }
+  } catch (e) {
+    console.error('Failed to get debug info:', e)
+    return { error: 'Failed to retrieve debug info' }
   }
 }
 
-// Initialize debug utilities
-export const initDebugUtils = () => {
-  // Set up global error handler
-  window.addEventListener('error', (event) => {
-    logError(event.error || new Error(event.message), {
-      type: 'global_error',
-      filename: event.filename,
-      lineno: event.lineno,
-      colno: event.colno
-    })
-  })
-  
-  // Set up unhandled promise rejection handler
-  window.addEventListener('unhandledrejection', (event) => {
-    logError(new Error(event.reason), {
-      type: 'unhandled_promise_rejection'
-    })
-  })
-  
-  // Set up white screen recovery
-  setupWhiteScreenRecovery()
-  
-  console.log('Debug utilities initialized')
+export const clearDebugLogs = () => {
+  try {
+    localStorage.removeItem('exam_error_logs')
+    localStorage.removeItem('exam_api_logs')
+    localStorage.removeItem('exam_submission_logs')
+    console.log('🧹 Debug logs cleared')
+  } catch (e) {
+    console.error('Failed to clear debug logs:', e)
+  }
 }
 
-// Export debug info to console
-window.getExamDebugInfo = getDebugInfo
+export const validateAnswers = (answers) => {
+  const issues = []
+  
+  // Check for required sections
+  const requiredSections = ['leseverstehen_teil1', 'leseverstehen_teil2', 'leseverstehen_teil3', 
+                           'sprachbausteine_teil1', 'sprachbausteine_teil2', 'hoerverstehen']
+  
+  requiredSections.forEach(section => {
+    if (!answers[section]) {
+      issues.push(`Missing section: ${section}`)
+    }
+  })
+  
+  // Check array lengths
+  if (answers.leseverstehen_teil1 && answers.leseverstehen_teil1.length !== 5) {
+    issues.push('leseverstehen_teil1 should have 5 answers')
+  }
+  
+  if (answers.leseverstehen_teil2 && answers.leseverstehen_teil2.length !== 5) {
+    issues.push('leseverstehen_teil2 should have 5 answers')
+  }
+  
+  if (answers.leseverstehen_teil3 && answers.leseverstehen_teil3.length !== 10) {
+    issues.push('leseverstehen_teil3 should have 10 answers')
+  }
+  
+  if (answers.sprachbausteine_teil1 && answers.sprachbausteine_teil1.length !== 10) {
+    issues.push('sprachbausteine_teil1 should have 10 answers')
+  }
+  
+  if (answers.sprachbausteine_teil2 && answers.sprachbausteine_teil2.length !== 10) {
+    issues.push('sprachbausteine_teil2 should have 10 answers')
+  }
+  
+  // Check Hörverstehen structure
+  if (answers.hoerverstehen) {
+    const hvSections = ['teil1', 'teil2', 'teil3']
+    hvSections.forEach(teil => {
+      if (!answers.hoerverstehen[teil]) {
+        issues.push(`Missing hoerverstehen.${teil}`)
+      } else if (answers.hoerverstehen[teil].length !== (teil === 'teil2' ? 10 : 5)) {
+        issues.push(`hoerverstehen.${teil} should have ${teil === 'teil2' ? 10 : 5} answers`)
+      }
+    })
+  }
+  
+  return {
+    isValid: issues.length === 0,
+    issues
+  }
+}

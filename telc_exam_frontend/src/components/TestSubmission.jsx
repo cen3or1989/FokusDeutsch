@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { API_BASE_URL } from '@/lib/api'
+import { toast } from 'sonner'
 
 const TestSubmission = ({ examId = 1 }) => {
   const [studentName, setStudentName] = useState('Test Student')
@@ -10,6 +11,7 @@ const TestSubmission = ({ examId = 1 }) => {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [includeWriting, setIncludeWriting] = useState(false)
+  const [testScenario, setTestScenario] = useState('basic')
 
   const baseAnswers = {
     leseverstehen_teil1: ['a', 'b', 'c', 'd', 'e'],
@@ -31,13 +33,39 @@ const TestSubmission = ({ examId = 1 }) => {
     }
   }
 
+  const getTestAnswers = () => {
+    switch (testScenario) {
+      case 'empty':
+        return {}
+      case 'partial':
+        return {
+          leseverstehen_teil1: ['a', '', 'c', '', 'e'],
+          sprachbausteine_teil1: ['a', 'b', '', '', '', '', '', '', '', ''],
+          hoerverstehen: {
+            teil1: [true, null, true, null, null],
+            teil2: [null, null, null, null, null, null, null, null, null, null],
+            teil3: [null, null, null, null, null]
+          }
+        }
+      case 'teil1-3':
+        return baseAnswers
+      case 'schriftlich':
+        return {
+          ...baseAnswers,
+          ...writingSection
+        }
+      default:
+        return baseAnswers
+    }
+  }
+
   const handleTestSubmit = async () => {
     setLoading(true)
     setError(null)
     setResult(null)
 
     try {
-      const answers = includeWriting ? { ...baseAnswers, ...writingSection } : baseAnswers
+      const answers = getTestAnswers()
       const timerPhase = includeWriting ? 'schriftlich' : 'teil1-3'
       
       const requestBody = {
@@ -47,6 +75,8 @@ const TestSubmission = ({ examId = 1 }) => {
       }
 
       console.log('Submitting test data:', requestBody)
+      console.log('Test scenario:', testScenario)
+      console.log('Timer phase:', timerPhase)
 
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}/submit`, {
         method: 'POST',
@@ -57,25 +87,37 @@ const TestSubmission = ({ examId = 1 }) => {
       })
 
       console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
 
       const responseText = await response.text()
       console.log('Response text:', responseText)
 
       if (!response.ok) {
         setError(`Error ${response.status}: ${responseText}`)
+        toast.error(`Test submission failed: ${response.status}`)
         return
       }
 
       const data = JSON.parse(responseText)
       setResult(data)
       console.log('Success:', data)
+      toast.success('Test submission successful!')
     } catch (err) {
       console.error('Test submission error:', err)
       setError(err.message)
+      toast.error(`Test submission error: ${err.message}`)
     } finally {
       setLoading(false)
     }
   }
+
+  const testScenarios = [
+    { value: 'basic', label: 'Basic (Teil 1-3)' },
+    { value: 'teil1-3', label: 'Complete Teil 1-3' },
+    { value: 'schriftlich', label: 'Complete with Writing' },
+    { value: 'partial', label: 'Partial Answers' },
+    { value: 'empty', label: 'Empty Answers' }
+  ]
 
   return (
     <Card className="p-6 max-w-2xl mx-auto mt-8">
@@ -100,6 +142,21 @@ const TestSubmission = ({ examId = 1 }) => {
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-medium mb-2">Test Scenario</label>
+          <select
+            value={testScenario}
+            onChange={(e) => setTestScenario(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            {testScenarios.map(scenario => (
+              <option key={scenario.value} value={scenario.value}>
+                {scenario.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="flex items-center space-x-2">
           <input
             type="checkbox"
@@ -116,6 +173,7 @@ const TestSubmission = ({ examId = 1 }) => {
         <div className="bg-gray-100 p-4 rounded">
           <h3 className="font-medium mb-2">Test Configuration:</h3>
           <p className="text-sm">Timer Phase: <strong>{includeWriting ? 'schriftlich' : 'teil1-3'}</strong></p>
+          <p className="text-sm">Scenario: <strong>{testScenarios.find(s => s.value === testScenario)?.label}</strong></p>
           <p className="text-sm">Sections: <strong>{includeWriting ? 'All sections' : 'Without writing'}</strong></p>
         </div>
 

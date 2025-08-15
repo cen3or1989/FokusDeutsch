@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { toast } from 'sonner'
 
 const AnswerSheet = ({ answers, onAnswerChange, onSubmit, studentName, onStudentNameChange, disabled = false }) => {
   const [isVisible, setIsVisible] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Themed radio-like dot for light/dark without changing light mode visuals
   const Dot = ({ selected }) => (
@@ -29,6 +31,30 @@ const AnswerSheet = ({ answers, onAnswerChange, onSubmit, studentName, onStudent
     return { answered, total: 60 }
   }
   const sheetProgress = computeAnsweredCount()
+
+  // Enhanced submit handler with better validation and error handling
+  const handleSubmit = async () => {
+    if (!studentName.trim()) {
+      toast.error('Bitte geben Sie Ihren Namen ein')
+      return
+    }
+
+    if (sheetProgress.answered === 0) {
+      toast.error('Bitte beantworten Sie mindestens eine Frage vor dem Einreichen')
+      return
+    }
+
+    setIsSubmitting(true)
+    
+    try {
+      await onSubmit()
+    } catch (error) {
+      console.error('Submission error:', error)
+      toast.error('Fehler beim Einreichen der Prüfung. Bitte versuchen Sie es erneut.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const renderCircleOption = (section, questionNum, option, isSelected) => {
     const sectionStartMap = {
@@ -397,14 +423,24 @@ const AnswerSheet = ({ answers, onAnswerChange, onSubmit, studentName, onStudent
             {/* Submit Button */}
             <div className="bg-gray-50 dark:bg-muted/50 rounded-lg p-4 border-2 border-gray-300 dark:border-gray-700">
               <Button 
-                onClick={onSubmit}
-                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02]"
-                disabled={!studentName.trim() || disabled}
+                onClick={handleSubmit}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white py-3 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!studentName.trim() || disabled || isSubmitting}
               >
-                🏁 Prüfung endgültig einreichen
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Wird eingereicht...
+                  </>
+                ) : (
+                  '🏁 Prüfung endgültig einreichen'
+                )}
               </Button>
               <p className="text-xs text-center text-gray-600 dark:text-gray-400 mt-2">
-                Bitte überprüfen Sie alle Antworten vor dem Einreichen
+                {sheetProgress.answered === 0 
+                  ? 'Bitte beantworten Sie mindestens eine Frage vor dem Einreichen'
+                  : 'Bitte überprüfen Sie alle Antworten vor dem Einreichen'
+                }
               </p>
             </div>
             </div>

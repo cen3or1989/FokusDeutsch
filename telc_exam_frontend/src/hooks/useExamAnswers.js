@@ -100,17 +100,68 @@ export const useExamAnswers = (exam) => {
   const normalizeAnswersForSubmit = useCallback(() => {
     const normalized = { ...answers }
     
+    // Clean up empty/undefined values
+    Object.keys(normalized).forEach(key => {
+      if (Array.isArray(normalized[key])) {
+        normalized[key] = normalized[key].map(val => {
+          if (val === '' || val === undefined || val === null) {
+            return null
+          }
+          return val
+        })
+      }
+    })
+    
+    // Handle Hörverstehen boolean values
+    if (normalized.hoerverstehen) {
+      Object.keys(normalized.hoerverstehen).forEach(teil => {
+        if (Array.isArray(normalized.hoerverstehen[teil])) {
+          normalized.hoerverstehen[teil] = normalized.hoerverstehen[teil].map(val => {
+            if (val === '' || val === undefined || val === null) {
+              return null
+            }
+            return Boolean(val)
+          })
+        }
+      })
+    }
+    
     // Normalize LV2 answers from letters (a/b/c) to indices (0/1/2)
     if (Array.isArray(normalized.leseverstehen_teil2)) {
       const mapLetterToIndex = { a: 0, b: 1, c: 2 }
       normalized.leseverstehen_teil2 = normalized.leseverstehen_teil2.map(v => {
-        if (typeof v === 'string') {
-          return mapLetterToIndex[v] ?? v
+        if (typeof v === 'string' && v.toLowerCase() in mapLetterToIndex) {
+          return mapLetterToIndex[v.toLowerCase()]
         }
         return v
       })
     }
     
+    // Validate Schriftlicher Ausdruck
+    if (normalized.schriftlicher_ausdruck) {
+      if (!normalized.schriftlicher_ausdruck.selected_task || 
+          !['A', 'B'].includes(normalized.schriftlicher_ausdruck.selected_task)) {
+        // Remove invalid schriftlicher_ausdruck data
+        delete normalized.schriftlicher_ausdruck
+      }
+    }
+    
+    // Remove completely empty sections to avoid backend validation issues
+    Object.keys(normalized).forEach(key => {
+      if (key === 'hoerverstehen') {
+        if (normalized[key] && Object.values(normalized[key]).every(teil => 
+          !Array.isArray(teil) || teil.every(val => val === null)
+        )) {
+          delete normalized[key]
+        }
+      } else if (Array.isArray(normalized[key])) {
+        if (normalized[key].every(val => val === null || val === '')) {
+          delete normalized[key]
+        }
+      }
+    })
+    
+    console.log('Normalized answers for submission:', normalized)
     return normalized
   }, [answers])
 
