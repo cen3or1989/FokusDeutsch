@@ -50,8 +50,8 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
   const translation = useTranslation(examId)
   const audio = useAudio()
 
-  // Handle submit function
-  const handleSubmitCallback = useCallback(async () => {
+  // Handle submit function - without timer dependency to avoid circular dependency
+  const handleSubmitCallback = useCallback(async (timerPhase = 'teil1-3') => {
     if (!studentName.trim()) {
       toast.error('Bitte geben Sie Ihren Namen ein')
       return
@@ -70,7 +70,7 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       const requestBody = {
         student_name: studentName,
         answers: normalizedAnswers,
-        timer_phase: timer.phase
+        timer_phase: timerPhase
       }
       
       console.log('Request body:', JSON.stringify(requestBody, null, 2))
@@ -108,10 +108,10 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
       console.error('Submit error:', error)
       toast.error('Fehler beim Einreichen der Prüfung')
     }
-  }, [studentName, examId, onComplete, answersHook, timer.phase])
+  }, [studentName, examId, onComplete, answersHook])
 
-  // Timer hook MUST come after handleSubmitCallback
-  const timer = useExamTimer(5400, handleSubmitCallback)
+  // Timer hook with submit callback
+  const timer = useExamTimer(5400, () => handleSubmitCallback(timer?.phase || 'teil1-3'))
 
   // Load exam data
   useEffect(() => {
