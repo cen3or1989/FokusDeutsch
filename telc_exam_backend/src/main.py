@@ -42,36 +42,47 @@ CORS(
     supports_credentials=False,
 )
 
-# Database configuration - PostgreSQL only
+# Database configuration - supports PostgreSQL and SQLite
 database_url = os.getenv('DATABASE_URL')
 
 if not database_url:
     raise ValueError(
         "DATABASE_URL environment variable is required. "
-        "Set it to your PostgreSQL connection string. "
-        "Example: postgresql://username:password@host:port/database"
+        "Set it to your database connection string. "
+        "Examples: "
+        "PostgreSQL: postgresql://username:password@host:port/database "
+        "SQLite: sqlite:///path/to/database.db"
     )
 
-if not database_url.startswith('postgresql://'):
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+# Configure engine options based on database type
+if database_url.startswith('postgresql://'):
+    # PostgreSQL configuration with connection pooling
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 10,
+        'max_overflow': 20,
+        'pool_timeout': 30
+    }
+    print(f"✅ Connected to PostgreSQL database")
+    print(f"🔗 Host: {database_url.split('@')[1].split('/')[0] if '@' in database_url else 'Unknown'}")
+elif database_url.startswith('sqlite://'):
+    # SQLite configuration
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+    }
+    print(f"✅ Connected to SQLite database")
+    print(f"🔗 File: {database_url.replace('sqlite:///', '')}")
+else:
     raise ValueError(
-        "Only PostgreSQL databases are supported. "
-        "DATABASE_URL must start with 'postgresql://'. "
+        f"Unsupported database URL. Must start with 'postgresql://' or 'sqlite://'. "
         f"Got: {database_url[:20]}..."
     )
 
-# PostgreSQL configuration with connection pooling
-app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_pre_ping': True,
-    'pool_recycle': 300,
-    'pool_size': 10,
-    'max_overflow': 20,
-    'pool_timeout': 30
-}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-print(f"✅ Connected to PostgreSQL database")
-print(f"🔗 Host: {database_url.split('@')[1].split('/')[0] if '@' in database_url else 'Unknown'}")
 
 db.init_app(app)
 Migrate(app, db)
