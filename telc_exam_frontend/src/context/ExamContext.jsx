@@ -5,7 +5,7 @@ import { useExamTimer } from '@/hooks/useExamTimer'
 import { useExamAnswers } from '@/hooks/useExamAnswers'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAudio } from '@/hooks/useAudio'
-import { logError, logApiCall, logComponentRender } from '@/lib/debugUtils'
+import { logError, logApiCall, logComponentRender, logSubmissionAttempt, validateAnswers } from '@/lib/debugUtils'
 
 const ExamContext = createContext()
 
@@ -51,37 +51,81 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
   const audio = useAudio()
 
   // Handle submit function - without timer dependency to avoid circular dependency
-  const handleSubmitCallback = useCallback(async (timerPhase = 'teil1-3') => {
+  const handleSubmitCallback = useCallback(async (timerPhase = null) => {
     if (!studentName.trim()) {
       toast.error('Bitte geben Sie Ihren Namen ein')
       return
     }
 
+    // Determine the correct timer phase if not provided
+    let currentTimerPhase = timerPhase
+    if (!currentTimerPhase || typeof currentTimerPhase !== 'string') {
+      // Get the current timer phase from the timer ref
+      currentTimerPhase = timerRef.current?.phase || 'teil1-3'
+    }
+
+    // Safety check to ensure we have a valid timer phase
+    if (!['teil1-3', 'schriftlich'].includes(currentTimerPhase)) {
+      console.warn('Invalid timer phase detected, defaulting to teil1-3:', currentTimerPhase)
+      currentTimerPhase = 'teil1-3'
+    }
+
     try {
       let normalizedAnswers = answersHook.normalizeAnswersForSubmit()
       
+      // Log submission attempt for debugging
+      logSubmissionAttempt(examId, normalizedAnswers, currentTimerPhase, studentName)
+      
+      // Validate answers before submission
+      const validation = validateAnswers(normalizedAnswers)
+      if (!validation.isValid) {
+        console.warn('Answer validation issues:', validation.issues)
+        // Don't block submission for validation issues, just log them
+      }
+      
       // Filter out schriftlicher_ausdruck when in teil1-3 phase
-      if (timerPhase === 'teil1-3') {
+      if (currentTimerPhase === 'teil1-3') {
         const { schriftlicher_ausdruck, ...filteredAnswers } = normalizedAnswers
         normalizedAnswers = filteredAnswers
       }
       
-      // Debug logging
-      console.log('Submitting exam with:', {
+      // Additional validation before submission
+      const totalAnswered = Object.values(normalizedAnswers).reduce((total, section) => {
+        if (section === 'hoerverstehen') {
+          return total + Object.values(section).reduce((hvTotal, teil) => {
+            return hvTotal + (Array.isArray(teil) ? teil.filter(v => typeof v === 'boolean').length : 0)
+          }, 0)
+        } else if (Array.isArray(section)) {
+          return total + section.filter(v => v !== '' && v !== undefined && v !== null).length
+        }
+        return total
+      }, 0)
+
+      if (totalAnswered === 0) {
+        toast.error('Bitte beantworten Sie mindestens eine Frage vor dem Einreichen')
+        return
+      }
+      
+      // Debug logging - use a safe object for logging
+      const debugInfo = {
         examId,
         studentName,
-        normalizedAnswers,
-        timerPhase
-      })
+        timerPhase: currentTimerPhase,
+        totalAnswered,
+        validationIssues: validation.issues,
+        answerSections: Object.keys(normalizedAnswers)
+      }
+      console.log('Submitting exam with:', debugInfo)
       
       const requestBody = {
         student_name: studentName,
         answers: normalizedAnswers,
-        timer_phase: timerPhase
+        timer_phase: currentTimerPhase
       }
       
       console.log('Request body:', JSON.stringify(requestBody, null, 2))
       
+      const startTime = performance.now()
       const response = await fetch(`${API_BASE_URL}/api/exams/${examId}/submit`, {
         method: 'POST',
         headers: {
@@ -89,37 +133,94 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
         },
         body: JSON.stringify(requestBody)
       })
+      const duration = performance.now() - startTime
       
       console.log('Response status:', response.status)
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      const responseText = await response.text()
+      console.log('Response text:', responseText)
+      
+      // Log API call
+      logApiCall(`${API_BASE_URL}/api/exams/${examId}/submit`, 'POST', response.status, duration, {
+        examId,
+        studentName,
+        timerPhase: currentTimerPhase,
+        totalAnswered
+      })
       
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error response:', errorText)
+        console.error('Error response:', responseText)
         
         try {
-          const errorJson = JSON.parse(errorText)
+          const errorJson = JSON.parse(responseText)
           console.error('Error JSON:', errorJson)
+          
           // Show specific error message if available
-          toast.error(errorJson.error || 'Fehler beim Einreichen der Prüfung')
+          const errorMessage = errorJson.error || errorJson.message || 'Fehler beim Einreichen der Prüfung'
+          toast.error(errorMessage)
+          
+          // Log detailed error information
+          logError(new Error(errorMessage), {
+            type: 'submission_error',
+            examId,
+            status: response.status,
+            errorJson,
+            requestBody: {
+              student_name: requestBody.student_name,
+              timer_phase: requestBody.timer_phase,
+              answerSections: Object.keys(requestBody.answers)
+            }
+          })
         } catch (e) {
-          console.error('Could not parse error response as JSON')
-          toast.error('Fehler beim Einreichen der Prüfung')
+          console.error('Could not parse error response as JSON:', e)
+          toast.error(`Fehler beim Einreichen der Prüfung (Status: ${response.status})`)
+          
+          logError(new Error(`HTTP ${response.status}: ${responseText}`), {
+            type: 'submission_http_error',
+            examId,
+            status: response.status,
+            responseText,
+            requestBody: {
+              student_name: requestBody.student_name,
+              timer_phase: requestBody.timer_phase,
+              answerSections: Object.keys(requestBody.answers)
+            }
+          })
         }
         return
       }
       
       if (response.ok) {
-        const result = await response.json()
+        let result
+        try {
+          result = JSON.parse(responseText)
+        } catch (e) {
+          console.error('Could not parse success response as JSON:', e)
+          toast.error('Unerwartetes Antwortformat vom Server')
+          return
+        }
+        
         console.log('Submission successful:', result)
         setIsSubmitted(true)
         toast.success('Prüfung erfolgreich eingereicht!')
+        
         if (onComplete) {
           onComplete(result)
         }
       }
     } catch (error) {
       console.error('Submit error:', error)
-      toast.error('Netzwerkfehler beim Einreichen der Prüfung')
+      
+      // Log network errors
+      logError(error, {
+        type: 'submission_network_error',
+        examId,
+        studentName,
+        timerPhase: currentTimerPhase
+      })
+      
+      toast.error('Netzwerkfehler beim Einreichen der Prüfung. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.')
     }
   }, [studentName, examId, onComplete, answersHook])
 
@@ -226,21 +327,22 @@ export const ExamProvider = ({ children, examId, onComplete, onCancelExam }) => 
 
   // Navigation logic
   const canNavigateToSection = useCallback((sectionKey) => {
-    if (!timer.hasStarted) return false
+    const currentTimer = timerRef.current
+    if (!currentTimer?.hasStarted) return false
     
     switch (sectionKey) {
       case 'leseverstehen':
       case 'sprachbausteine':
-        return timer.phase === 'teil1-3'
+        return currentTimer.phase === 'teil1-3'
       case 'hoerverstehen':
-        return timer.phase === 'teil1-3' && !timer.hoerLocked
+        return currentTimer.phase === 'teil1-3' && !currentTimer.hoerLocked
       case 'schriftlicher_ausdruck':
-        return timer.phase === 'schriftlich' || 
-               (timer.phase === 'teil1-3' && answersHook.getTeil1_3Progress().hasMinimumForWriting)
+        return currentTimer.phase === 'schriftlich' || 
+               (currentTimer.phase === 'teil1-3' && answersHook.getTeil1_3Progress().hasMinimumForWriting)
       default:
         return false
     }
-  }, [timer, answersHook])
+  }, [answersHook])
 
   const value = {
     // Exam data

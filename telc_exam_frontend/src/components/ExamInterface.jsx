@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import ThemeSwitch from './ThemeSwitch'
 import AnswerSheet from './AnswerSheet'
+import DebugPanel from './DebugPanel'
 import ExamTimer from './exam/ExamTimer'
 import ExamNavigation from './exam/ExamNavigation'
 import QuickAnswerMap from './exam/QuickAnswerMap'
@@ -138,6 +139,16 @@ const ExamInterfaceContent = () => {
         onStudentNameChange={setStudentName}
         disabled={!timer.hasStarted}
       />
+
+      {/* Debug Panel - only show in development */}
+      {import.meta.env.DEV && (
+        <DebugPanel
+          examId={exam.id}
+          answers={answers.answers}
+          studentName={studentName}
+          timerPhase={timer.phase}
+        />
+      )}
 
       {/* Hero + Navigation */}
       <section className="hero-grad rounded-2xl border mb-6" style={{borderColor:'var(--border-color)'}}>

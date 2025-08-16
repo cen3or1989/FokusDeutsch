@@ -160,10 +160,10 @@ const LesesverstehenTeil2 = memo(() => {
   const texts = Array.isArray(exam.leseverstehen_teil2.texts) ? exam.leseverstehen_teil2.texts : []
   const questions = Array.isArray(exam.leseverstehen_teil2.questions) ? exam.leseverstehen_teil2.questions : []
   const lv2Paths = [
-    ...exam.leseverstehen_teil2.texts.map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
-    ...exam.leseverstehen_teil2.questions.flatMap((q, qIdx) => [
+    ...texts.map((_, idx) => `leseverstehen_teil2.texts[${idx}]`),
+    ...questions.flatMap((q, qIdx) => [
       `leseverstehen_teil2.questions[${qIdx}].question`,
-      ...q.options.map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
+      ...(q.options || []).map((_, oIdx) => `leseverstehen_teil2.questions[${qIdx}].options[${oIdx}]`)
     ])
   ]
 
@@ -185,7 +185,7 @@ const LesesverstehenTeil2 = memo(() => {
           <div className="block" style={{color: 'var(--text-color)'}}>
             <h4>Text:</h4>
             <div className={`text-sm leading-relaxed space-y-4 ${getContentTextClass('lv2', sectionLang)}`}>
-              {exam.leseverstehen_teil2.texts.map((text, textIndex) => (
+              {texts.map((text, textIndex) => (
                 <p key={textIndex}>{text}</p>
               ))}
             </div>
@@ -193,7 +193,7 @@ const LesesverstehenTeil2 = memo(() => {
           
           <div className="space-y-4">
             <h4 className={`section-title ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>Fragen:</h4>
-            {exam.leseverstehen_teil2.questions.map((question, index) => (
+            {questions.map((question, index) => (
               <div key={index} className="p-4 border rounded" style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                 <h5 className={`font-medium mb-3 ${getTitleTextClass('lv2', sectionLang)}`} style={{color: 'var(--primary-color)'}}>
                   {index + 6}. <FormattedText
@@ -204,7 +204,7 @@ const LesesverstehenTeil2 = memo(() => {
                   />
                 </h5>
                 <div className="space-y-2">
-                  {question.options.map((option, optIndex) => (
+                  {(question.options || []).map((option, optIndex) => (
                     <div key={optIndex} className={`text-sm ${getStaticTitleDirectionClass('lv2', sectionLang)}`}>
                       <span className="font-medium" style={{color: 'var(--primary-color)'}}>
                         {String.fromCharCode(97 + optIndex)})
@@ -230,7 +230,7 @@ const LesesverstehenTeil2 = memo(() => {
 const LesesverstehenTeil3 = memo(() => {
   const { exam, sectionLang } = useExam()
 
-  if (!exam?.leseverstehen_teil3) {
+  if (!exam?.leseverstehen_teil3?.situations || !exam?.leseverstehen_teil3?.ads) {
     return (
       <Card style={{backgroundColor: 'var(--secondary-color)'}}>
         <CardContent className="p-6">
@@ -251,8 +251,8 @@ const LesesverstehenTeil3 = memo(() => {
   }
 
   const lv3Paths = [
-    ...exam.leseverstehen_teil3.situations.map((_, idx) => `leseverstehen_teil3.situations[${idx}]`),
-    ...exam.leseverstehen_teil3.ads.map((_, idx) => `leseverstehen_teil3.ads[${idx}]`)
+    ...(exam.leseverstehen_teil3.situations || []).map((_, idx) => `leseverstehen_teil3.situations[${idx}]`),
+    ...(exam.leseverstehen_teil3.ads || []).map((_, idx) => `leseverstehen_teil3.ads[${idx}]`)
   ]
 
   return (
@@ -273,7 +273,7 @@ const LesesverstehenTeil3 = memo(() => {
           <div>
             <h4 className={`font-semibold mb-3 ${getStaticTitleDirectionClass('lv3', sectionLang)}`} style={{color: 'var(--primary-color)'}}>Situationen (11-20):</h4>
             <div className="space-y-3">
-              {exam.leseverstehen_teil3.situations.map((situation, index) => (
+              {(exam.leseverstehen_teil3.situations || []).map((situation, index) => (
                 <div key={index} className="p-3 border rounded" style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                   <h5 className={`font-medium ${getTitleTextClass('lv3', sectionLang)}`} style={{color: 'var(--primary-color)'}}>
                     {index + 11}. <span className={getContentTextClass('lv3', sectionLang)}>{situation}</span>
@@ -286,7 +286,7 @@ const LesesverstehenTeil3 = memo(() => {
           <div>
             <h4 className={`font-semibold mb-3 ${getStaticTitleDirectionClass('lv3', sectionLang)}`} style={{color: 'var(--primary-color)'}}>Anzeigen (a-l):</h4>
             <div className="grid grid-cols-2 gap-3">
-              {exam.leseverstehen_teil3.ads.map((ad, index) => (
+              {(exam.leseverstehen_teil3.ads || []).map((ad, index) => (
                 <div key={index} className={`p-3 border rounded ${getStaticTitleDirectionClass('lv3', sectionLang)}`} style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                   <span className="font-medium" style={{color: 'var(--primary-color)'}}>
                     {String.fromCharCode(97 + index)})

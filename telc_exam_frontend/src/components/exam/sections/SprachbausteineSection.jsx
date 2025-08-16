@@ -165,7 +165,7 @@ const SprachbausteineTeil2 = memo(() => {
         <div className="mb-6">
           <h4 className={`section-title ${getStaticTitleDirectionClass('sb2', sectionLang)}`}>Wörter (a-o):</h4>
           <div className="grid grid-cols-3 gap-2 text-sm">
-            {exam.sprachbausteine_teil2.words.map((word, index) => (
+            {(exam.sprachbausteine_teil2.words || []).map((word, index) => (
               <div key={index} className={`p-2 border rounded ${getStaticTitleDirectionClass('sb2', sectionLang)}`} style={{backgroundColor: 'var(--card)', color: 'var(--text-color)'}}>
                 <span className="font-medium" style={{color: 'var(--primary-color)'}}>
                   {String.fromCharCode(97 + index)})
